@@ -449,12 +449,20 @@ class MainWindow(QMainWindow):
         self._fix_tooltip_palette(theme)
 
     def _fix_tooltip_palette(self, theme: str):
-        c = get_colors(theme)
-        app = QApplication.instance()
-        palette = app.palette()
-        palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(c["bg_card"]))
-        palette.setColor(QPalette.ColorRole.ToolTipText, QColor(c["text_primary"]))
-        app.setPalette(palette)
+        colors = get_colors(theme)
+        # Convertimos tus strings hex a QColor
+        bg_color = QColor(colors['bg_input'])
+        text_color = QColor(colors['text_primary'])
+
+        palette = QApplication.palette() # Obtenemos la paleta global
+
+        # Forzamos los roles de ToolTip para que sean opacos
+        palette.setColor(QPalette.ColorGroup.All, QPalette.ColorRole.ToolTipBase, bg_color)
+        palette.setColor(QPalette.ColorGroup.All, QPalette.ColorRole.ToolTipText, text_color)
+        # En Linux/KDE a veces usa Window/WindowText para el fondo del tooltip
+        palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.ToolTipBase, bg_color)
+
+        QApplication.setPalette(palette)
 
     # ─── Public API (called by tray) ───────────────────────────────────────────
 

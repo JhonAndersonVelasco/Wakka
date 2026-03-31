@@ -12,7 +12,7 @@ from pathlib import Path
 # ─── Qt HiDPI (must be set BEFORE QApplication) ──────────────────────────────
 os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
 
-from PyQt6.QtCore import QTranslator, QLocale, QLibraryInfo
+from PyQt6.QtCore import QTranslator, QLocale, QLibraryInfo, Qt
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
 # Add parent dir to sys.path so we can import 'wakka' as a package even if run directly
@@ -25,6 +25,7 @@ from core.scheduler import UpdateScheduler
 from core.constants import APP_NAME, APP_ID, APP_VERSION, APP_DOMAIN, SUPPORTED_AUR_HELPERS
 from ui.main_window import MainWindow
 from ui.tray.tray_icon import TrayIcon
+from ui.styles.theme import build_qss
 
 log = logging.getLogger("wakka")
 

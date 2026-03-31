@@ -27,11 +27,11 @@ def set_current_theme(theme: ThemeMode) -> None:
 def get_color(key: str, theme: ThemeMode | None = None) -> str:
     """
     Get a color value from the theme palette.
-    
+
     Args:
         key: Color token name (e.g., 'text_primary', 'accent', 'bg_card')
         theme: Theme mode, defaults to current theme if None
-    
+
     Returns:
         Color value as a string (hex or rgba)
     """
@@ -57,7 +57,7 @@ def style_text(
 ) -> str:
     """
     Generate a stylesheet string for text styling.
-    
+
     Args:
         color_key: Color token name
         size: Font size in pixels
@@ -78,7 +78,7 @@ def style_text(
 def style_status(status: str = "success", size: int = 11, theme: ThemeMode | None = None) -> str:
     """
     Generate stylesheet for status indicators.
-    
+
     Args:
         status: One of 'success', 'warning', 'danger', 'info'
         size: Font size in pixels
@@ -86,7 +86,7 @@ def style_status(status: str = "success", size: int = 11, theme: ThemeMode | Non
     """
     color_key = {
         "success": "success",
-        "warning": "warning", 
+        "warning": "warning",
         "danger": "danger",
         "error": "danger",
         "info": "info",
@@ -814,12 +814,11 @@ QProgressBar::chunk {{
 
 /* ═══ Tooltips ═══════════════════════════════════════════════════════════════ */
 QToolTip {{
-    background-color: {c['bg_card']};
+    background-color: {c['bg_input']};
     border: 1px solid {c['border']};
     color: {c['text_primary']};
     padding: 6px 10px;
     border-radius: 6px;
-    opacity: 255;
 }}
 
 /* ═══ Splitter ═══════════════════════════════════════════════════════════════ */

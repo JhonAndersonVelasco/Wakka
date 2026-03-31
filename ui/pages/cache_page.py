@@ -34,13 +34,13 @@ class CachePage(QWidget):
         # ── Global layout ──
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
-        
+
         # ── Scroll area ──
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
         self._scroll.setFrameShape(QFrame.Shape.NoFrame)
         self._scroll.setStyleSheet(style_transparent_bg())
-        
+
         self._content = QWidget()
         self._content.setStyleSheet(style_transparent_bg())
         layout = QVBoxLayout(self._content)
@@ -72,8 +72,8 @@ class CachePage(QWidget):
         total_row.addStretch()
 
         refresh_btn = QPushButton()
-        refresh_btn.setIcon(get_icon("refresh", "#8892a4"))
         refresh_btn.setToolTip(self.tr("Actualizar tamaños"))
+        refresh_btn.setIcon(get_icon("refresh", "#8892a4"))
         refresh_btn.setFixedSize(36, 36)
         refresh_btn.clicked.connect(self.refresh_requested)
         total_row.addWidget(refresh_btn)
