@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Wakka (tray)
+Comment=Wakka package manager system tray monitor
+Comment[es]=Monitor de bandeja de sistema de Wakka
+Exec=wakka --tray
+Icon=wakka
+Terminal=false
+Type=Application
+# Hidden from app menus — only for autostart
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel
+StartupNotify=false
