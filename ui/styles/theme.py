@@ -815,10 +815,9 @@ QProgressBar::chunk {{
 /* ═══ Tooltips ═══════════════════════════════════════════════════════════════ */
 QToolTip {{
     background-color: {c['bg_input']};
-    border: 1px solid {c['border']};
+    border: 1px solid {c['bg_card_hover']};
     color: {c['text_primary']};
     padding: 6px 10px;
-    border-radius: 6px;
 }}
 
 /* ═══ Splitter ═══════════════════════════════════════════════════════════════ */

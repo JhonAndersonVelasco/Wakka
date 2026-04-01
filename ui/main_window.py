@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
         # Apply theme
         theme = self._config.get("theme", "dark")
         set_current_theme(theme)
-        self.setStyleSheet(build_qss(theme))
+        QApplication.instance().setStyleSheet(build_qss(theme))
         self._fix_tooltip_palette(theme)
 
         self._build_ui()
@@ -445,7 +445,7 @@ class MainWindow(QMainWindow):
     def _apply_theme(self, theme: str):
         self._config.set("theme", theme)
         set_current_theme(theme)
-        self.setStyleSheet(build_qss(theme))
+        QApplication.instance().setStyleSheet(build_qss(theme))
         self._fix_tooltip_palette(theme)
 
     def _fix_tooltip_palette(self, theme: str):
