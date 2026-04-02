@@ -58,7 +58,7 @@ plymouth             # Pantalla gráfica al apagar
 
 ## 🚀 Instalación
 
-### Desde AUR (recomendado)
+### Desde AUR (aún no disponible)
 ```bash
 yay -S wakka
 ```
