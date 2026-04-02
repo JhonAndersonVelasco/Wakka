@@ -17,8 +17,7 @@ depends=('python-pyqt6'
          'python-psutil')
 
 makedepends=()
-
-source=("wakka-${pkgver}.tar.gz::https://github.com/JhonAndersonVelasco/Wakka/archive/refs/tags/v${pkgver}.tar.gz")
+source=("wakka_${pkgver}.tar.gz::https://github.com/JhonAndersonVelasco/Wakka/archive/refs/tags/v${pkgver}.0.tar.gz")
 
 sha256sums=('SKIP')
 
