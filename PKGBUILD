@@ -2,7 +2,7 @@
 # PKGBUILD for the Wakka system packages management tool.
 
 pkgname=wakka
-pkgver=0.1
+pkgver=0.1.0
 pkgrel=1
 pkgdesc="Wakka – a system packages management utility"
 arch=('x86_64')
@@ -17,14 +17,14 @@ depends=('python-pyqt6'
          'python-psutil')
 
 makedepends=()
-source=("wakka_${pkgver}.0.tar.gz::https://github.com/JhonAndersonVelasco/Wakka/archive/refs/tags/v${pkgver}.0.tar.gz")
+source=("wakka_${pkgver}.tar.gz::https://github.com/JhonAndersonVelasco/Wakka/archive/refs/tags/v${pkgver}.tar.gz")
 
 sha256sums=('SKIP')
 
 install=wakka.install
 
 package() {
-  local _src="$srcdir/Wakka-${pkgver}/main"
+  local _src="$srcdir/Wakka-${pkgver}"
 
   # Crear directorios necesarios
   install -d "$pkgdir/usr/lib/wakka"
