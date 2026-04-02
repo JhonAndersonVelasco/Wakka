@@ -4,3 +4,4 @@ gen_pkgbuild.py
 **/pkg/
 **/src/
 .gitignore
+wakka_*.tar.gz
