@@ -1,12 +1,17 @@
 post_install() {
-    gtk-update-icon-cache -f -t "$pkgdir/usr/share/icons/hicolor"
-    update-desktop-database "$pkgdir/usr/share/applications"
-    update-mime-database "$pkgdir/usr/share/mime"
+    gtk-update-icon-cache -f -t "/usr/share/icons/hicolor"
+    update-desktop-database "/usr/share/applications"
+    update-mime-database "/usr/share/mime"
 }
 pre_upgrade() {
 }
 post_upgrade() {
-    post_install ${1%%-*}
+    post_install
 }
 pre_remove() {
+}
+post_remove() {
+    gtk-update-icon-cache -f -t "/usr/share/icons/hicolor"
+    update-desktop-database "/usr/share/applications"
+    update-mime-database "/usr/share/mime"
 }

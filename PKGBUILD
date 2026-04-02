@@ -16,7 +16,7 @@ depends=('python-pyqt6'
          'python-packaging'
          'python-psutil')
 
-makedepends=('git' 'python-pip')
+makedepends=()
 
 source=("wakka-${pkgver}.tar.gz::https://github.com/JhonAndersonVelasco/Wakka/archive/refs/tags/v${pkgver}.tar.gz")
 
@@ -24,15 +24,14 @@ sha256sums=('SKIP')
 
 install=(wakka.install)
 
-_src="$srcdir/Wakka-${pkgver}/main"
-
 package() {
+  local _src="$srcdir/Wakka-${pkgver}/main"
+
   # Crear directorios necesarios
   install -d "$pkgdir/usr/lib/wakka"
   install -d "$pkgdir/usr/lib/wakka/core"
   install -d "$pkgdir/usr/lib/wakka/core/systemd"
   install -d "$pkgdir/usr/lib/wakka/ui"
-  install -d "$pkgdir/usr/lib/wakka/ui/assets"
   install -d "$pkgdir/usr/lib/wakka/ui/i18n"
   install -d "$pkgdir/usr/lib/wakka/ui/pages"
   install -d "$pkgdir/usr/lib/wakka/ui/styles"
@@ -90,21 +89,21 @@ EOF
   chmod +x "$pkgdir/usr/bin/wakka"
 
   # Instalar iconos
-  install -Dm644 "$srcdir/Wakka-${pkgver}/main/ui/assets/wakka.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/"
+  install -Dm644 "$_src/ui/assets/wakka.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/"
 
   # Instalar archivo .desktop
-  install -Dm644 "$srcdir/Wakka-${pkgver}/main/install/wakka.desktop" "$pkgdir/usr/share/applications/"
+  install -Dm644 "$_src/install/wakka.desktop" "$pkgdir/usr/share/applications/"
 
   # Instalar archivo autostart .desktop
-  install -Dm644 "$srcdir/Wakka-${pkgver}/main/install/wakka-autostart.desktop" "$pkgdir/etc/skel/.config/autostart/"
+  install -Dm644 "$_src/install/wakka-autostart.desktop" "$pkgdir/etc/skel/.config/autostart/"
 
   # Instalar tipos mime
-  install -Dm644 "$srcdir/Wakka-${pkgver}/main/install/wakka-mime.xml" "$pkgdir/usr/share/mime/packages/"
+  install -Dm644 "$_src/install/wakka-mime.xml" "$pkgdir/usr/share/mime/packages/"
 
   # Reglas Polkit
-  install -Dm644 "$srcdir/Wakka-${pkgver}/main/install/10-wakka.rules" "$pkgdir/usr/share/polkit-1/rules.d/"
+  install -Dm644 "$_src/install/10-wakka.rules" "$pkgdir/usr/share/polkit-1/rules.d/"
 
   # Servicio de instalación al apagar
-  install -Dm644 "$srcdir/Wakka-${pkgver}/main/install/wakka-shutdown.service" "$pkgdir/etc/systemd/system/"
+  install -Dm644 "$_src/install/wakka-shutdown.service" "$pkgdir/usr/lib/systemd/system/"
 
 }
