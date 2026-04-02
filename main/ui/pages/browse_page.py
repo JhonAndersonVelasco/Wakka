@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
 from ..widgets.package_card import PackageCard
 from ..styles.icons import get_icon
 from ..styles.theme import style_transparent_bg, style_loading, style_icon_text, style_subtitle, style_filter_border
-from core.package_manager import Package, PkgSource
+from modules.package_manager import Package, PkgSource
 
 
 class BrowsePage(QWidget):
@@ -253,7 +253,7 @@ class BrowsePage(QWidget):
         self._rebuild_cards()
 
     def _filtered(self) -> list[Package]:
-        from core.package_manager import PkgStatus
+        from modules.package_manager import PkgStatus
 
         if self._active_filter == "official":
             filtered = [

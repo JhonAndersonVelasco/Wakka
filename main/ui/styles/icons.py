@@ -1,15 +1,13 @@
 """
-Wakka — SVG Icons embedded as base64 for portability.
+Wakka — SVG Icons embedded for portability.
 All icons are designed to match the purple-blue accent palette.
 """
 from __future__ import annotations
 
-import base64
-from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon, QPixmap, QPainter
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtCore import QByteArray
-import functools
 
 
 # ─── SVG definitions ──────────────────────────────────────────────────────────
@@ -64,7 +62,7 @@ def get_icon(name: str, color: str = "#8892a4", size: int = 18) -> QIcon:
     cache_key = f"{name}_{color}_{size}"
     if cache_key in _ICON_CACHE:
         return _ICON_CACHE[cache_key]
-        
+
     svg = _SVG.get(name, _SVG["info"])
     icon = _render_svg(svg, color, size)
     _ICON_CACHE[cache_key] = icon

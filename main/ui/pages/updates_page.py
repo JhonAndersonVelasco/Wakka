@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
 from ..widgets.package_card import PackageCard
 from ..styles.icons import get_icon
 from ..styles.theme import style_transparent_bg, style_icon_text, style_title, style_subtitle
-from core.package_manager import Package
+from modules.package_manager import Package
 
 
 class UpdatesPage(QWidget):

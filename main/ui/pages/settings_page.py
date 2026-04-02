@@ -21,8 +21,8 @@ from ..styles.theme import (
     style_transparent_bg, style_subtitle, style_label,
     style_text, style_accent_label, style_status,
 )
-from core.config_manager import ConfigManager
-from core.repo_manager import RepoManager, Repository
+from modules.config_manager import ConfigManager
+from modules.repo_manager import RepoManager, Repository
 
 
 class SettingsPage(QWidget):

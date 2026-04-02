@@ -19,12 +19,12 @@ from .pages import UpdatesPage, InstalledPage, BrowsePage, CachePage, SettingsPa
 from .widgets.package_info_dialog import PackageInfoDialog
 from .widgets.terminal_widget import TerminalWidget
 from .styles.icons import get_icon, get_logo_icon
-from core.package_manager import PackageManager
-from core.cache_manager import CacheManager
-from core.config_manager import ConfigManager
-from core.repo_manager import RepoManager
-from core.scheduler import UpdateScheduler
-from core.constants import (
+from modules.package_manager import PackageManager
+from modules.cache_manager import CacheManager
+from modules.config_manager import ConfigManager
+from modules.repo_manager import RepoManager
+from modules.scheduler import UpdateScheduler
+from modules.constants import (
     NAV_ITEMS, PAGE_INDEX, DEFAULT_WINDOW_SIZE, MIN_WINDOW_SIZE,
     SIDEBAR_WIDTH, ICON_SIZE_SMALL, ICON_SIZE_LOGO, ICON_SIZE_LOGO_LARGE,
 )

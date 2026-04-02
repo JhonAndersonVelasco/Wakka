@@ -8,7 +8,7 @@ from __future__ import annotations
 from PyQt6.QtCore import pyqtSignal, QObject
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu
 
-from ui.styles.icons import get_tray_icon, get_icon
+from main.ui.assets.icons import get_tray_icon, get_icon
 from ui.styles.theme import style_menu
 
 

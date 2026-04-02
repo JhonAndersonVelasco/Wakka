@@ -14,8 +14,8 @@ from ..styles.theme import (
     style_transparent_bg, style_separator, style_icon_text,
     style_text, style_label, style_subtitle, style_status, get_color,
 )
-from core.cache_manager import CacheInfo, fmt_size
-from core.config_manager import ConfigManager
+from modules.cache_manager import CacheInfo, fmt_size
+from modules.config_manager import ConfigManager
 
 
 class CachePage(QWidget):

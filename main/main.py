@@ -18,11 +18,11 @@ from PyQt6.QtWidgets import QApplication, QMessageBox
 # Add parent dir to sys.path so we can import 'wakka' as a package even if run directly
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.config_manager import ConfigManager
-from core.package_manager import PackageManager
-from core.cache_manager import CacheManager
-from core.scheduler import UpdateScheduler
-from core.constants import APP_NAME, APP_VERSION, APP_DOMAIN, SUPPORTED_AUR_HELPERS
+from modules.config_manager import ConfigManager
+from modules.package_manager import PackageManager
+from modules.cache_manager import CacheManager
+from modules.scheduler import UpdateScheduler
+from modules.constants import APP_NAME, APP_VERSION, APP_DOMAIN, SUPPORTED_AUR_HELPERS
 from ui.main_window import MainWindow
 from ui.tray.tray_icon import TrayIcon
 from ui.styles.theme import build_qss

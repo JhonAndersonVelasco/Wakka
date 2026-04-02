@@ -10,8 +10,8 @@ from PyQt6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLabel,
     QPushButton, QCheckBox, QSizePolicy,
 )
-from ui.styles.icons import get_icon
-from core.package_manager import Package, PkgSource, PkgStatus
+from ..styles.icons import get_icon
+from ...modules.package_manager import Package, PkgSource, PkgStatus
 
 
 class PackageCard(QWidget):

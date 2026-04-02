@@ -4,8 +4,4 @@
     <comment>Arch Linux package</comment>
     <glob pattern="*.pkg.tar.zst"/>
   </mime-type>
-  <mime-type type="application/vnd.debian.binary-package">
-    <comment>Debian package</comment>
-    <glob pattern="*.deb"/>
-  </mime-type>
 </mime-info>

@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
 from ..widgets.package_card import PackageCard
 from ..styles.icons import get_icon
 from ..styles.theme import style_transparent_bg, style_loading
-from core.package_manager import Package, PkgStatus
+from modules.package_manager import Package, PkgStatus
 
 
 class InstalledPage(QWidget):
