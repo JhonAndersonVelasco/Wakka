@@ -27,6 +27,8 @@ package() {
   local _src="$srcdir/Wakka-${pkgver}"
 
   # Crear directorios necesarios
+  install -d "$pkgdir/etc/skel/.config/autostart/"
+  install -d "$pkgdir/usr/lib/systemd/system/"
   install -d "$pkgdir/usr/lib/wakka"
   install -d "$pkgdir/usr/lib/wakka/core"
   install -d "$pkgdir/usr/lib/wakka/core/systemd"
@@ -36,7 +38,10 @@ package() {
   install -d "$pkgdir/usr/lib/wakka/ui/styles"
   install -d "$pkgdir/usr/lib/wakka/ui/tray"
   install -d "$pkgdir/usr/lib/wakka/ui/widgets"
+  install -d "$pkgdir/usr/share/applications/"
   install -d "$pkgdir/usr/share/icons/hicolor/scalable/apps/"
+  install -d "$pkgdir/usr/share/mime/packages/"
+  install -d "$pkgdir/usr/share/polkit-1/rules.d/"
 
   # Instalar el script principal
   install -m644 "$_src/__init__.py" "$pkgdir/usr/lib/wakka/__init__.py"
@@ -88,21 +93,21 @@ EOF
   chmod +x "$pkgdir/usr/bin/wakka"
 
   # Instalar iconos
-  install -Dm644 "$_src/ui/assets/wakka.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/"
+  install -m644 "$_src/ui/assets/wakka.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/"
 
   # Instalar archivo .desktop
-  install -Dm644 "$_src/install/wakka.desktop" "$pkgdir/usr/share/applications/"
+  install -m644 "$_src/install/wakka.desktop" "$pkgdir/usr/share/applications/"
 
   # Instalar archivo autostart .desktop
-  install -Dm644 "$_src/install/wakka-autostart.desktop" "$pkgdir/etc/skel/.config/autostart/"
+  install -m644 "$_src/install/wakka-autostart.desktop" "$pkgdir/etc/skel/.config/autostart/"
 
   # Instalar tipos mime
-  install -Dm644 "$_src/install/wakka-mime.xml" "$pkgdir/usr/share/mime/packages/"
+  install -m644 "$_src/install/wakka-mime.xml" "$pkgdir/usr/share/mime/packages/"
 
   # Reglas Polkit
-  install -Dm644 "$_src/install/10-wakka.rules" "$pkgdir/usr/share/polkit-1/rules.d/"
+  install -m644 "$_src/install/10-wakka.rules" "$pkgdir/usr/share/polkit-1/rules.d/"
 
   # Servicio de instalación al apagar
-  install -Dm644 "$_src/install/wakka-shutdown.service" "$pkgdir/usr/lib/systemd/system/"
+  install -m644 "$_src/install/wakka-shutdown.service" "$pkgdir/usr/lib/systemd/system/"
 
 }
