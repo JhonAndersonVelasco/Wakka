@@ -1,3 +1,6 @@
 **/__pycache__/
 *.pyc
 gen_pkgbuild.py
+**/pkg/
+**/src/
+.gitignore

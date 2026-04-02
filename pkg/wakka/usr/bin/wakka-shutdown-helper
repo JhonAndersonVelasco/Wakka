@@ -1,5 +1,0 @@
-#!/usr/bin/env python3
-import sys
-from wakka.systemd.shutdown_handler import shutdown_main
-if __name__ == '__main__':
-    shutdown_main()

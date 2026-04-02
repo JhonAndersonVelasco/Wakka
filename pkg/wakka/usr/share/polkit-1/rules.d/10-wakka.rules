@@ -1,9 +1,0 @@
-/* Polkit rules for Wakka package manager */
-polkit.addRule(function(action, subject) {
-    if (action.id === "org.freedesktop.policykit.exec" &&
-        (action.lookup("program") === "/usr/bin/paccache" ||
-         action.lookup("program") === "/usr/bin/pacman") &&
-        subject.isInGroup("wheel")) {
-        return polkit.Result.YES;
-    }
-});
