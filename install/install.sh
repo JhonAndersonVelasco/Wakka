@@ -118,7 +118,3 @@ fi
 echo ""
 echo "==> Wakka installed successfully!"
 echo ""
-echo "    Run: wakka"
-echo "    To enable updates on shutdown:"
-echo "      sudo systemctl enable wakka-shutdown.service"
-echo ""

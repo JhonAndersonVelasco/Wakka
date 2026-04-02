@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wakka"
+version = "0.1.0"
+description = "Wakka – a system packages management utility"
+authors = [{name = "Jhon Velasco", email = "jhandervelbux@gmail.com"}]
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = [
+    "PyQt6>=6.6.0",
+    "apscheduler>=3.10.4",
+    "dbus-python>=1.3.2",
+    "pydbus>=0.6.0",
+    "requests>=2.31.0",
+    "packaging>=24.0",
+    "psutil>=5.9.0"
+]
