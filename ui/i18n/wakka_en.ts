@@ -532,13 +532,18 @@
         </message>
         <message>
             <location filename="core/askpass.py" line="76"/>
-            <source>Enter sudo password for %1</source>
+            <source>Ingrese la contraseña de sudo para %1</source>
             <translation>Enter sudo password for %1</translation>
         </message>
         <message>
             <location filename="core/askpass.py" line="19"/>
             <source>Wakka — Autenticación</source>
             <translation>Wakka — Authentication</translation>
+        </message>
+        <message>
+            <location filename="core/askpass.py" line="122"/>
+            <source>Contraseña obligatoria:</source>
+            <translation>Required password:</translation>
         </message>
     </context>
     <context>

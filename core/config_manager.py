@@ -1,17 +1,15 @@
 """
 Wakka — Config Manager
-Manages /etc/pacman.conf (via pkexec) and ~/.config/wakka/settings.json.
+Manages /etc/pacman.conf (via sudo) and ~/.config/wakka/settings.json.
 """
 from __future__ import annotations
-
 import json
-import os
 import re
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
+from .privilege_helper import PrivilegeHelper
 
 PACMAN_CONF = Path("/etc/pacman.conf")
 SETTINGS_DIR = Path.home() / ".config" / "wakka"
@@ -19,12 +17,12 @@ SETTINGS_FILE = SETTINGS_DIR / "settings.json"
 
 DEFAULT_SETTINGS: dict[str, Any] = {
     "theme": "dark",
-    "language": "auto",     # "auto" | "es" | "en" | ...
+    "language": "auto",
     "autostart": True,
     "check_updates_on_start": True,
     "update_schedule": {
         "enabled": False,
-        "frequency": "weekly",  # "daily" | "weekly" | "monthly"
+        "frequency": "weekly",
         "day": "saturday",
         "hour": 10,
         "minute": 0,
@@ -39,26 +37,16 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "parallel_downloads": 5,
 }
 
-
 class ConfigManager:
-    """
-    Manages app settings (JSON) and /etc/pacman.conf modifications.
-    All pacman.conf writes go through pkexec + tee to avoid running
-    the whole app as root.
-    """
-
     def __init__(self):
         SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
         self._settings = self._load_settings()
-        self._pkexec = shutil.which("pkexec")
-
-    # ─── Settings JSON ─────────────────────────────────────────────────────────
+        self.priv = PrivilegeHelper()
 
     def _load_settings(self) -> dict:
         if SETTINGS_FILE.exists():
             try:
                 data = json.loads(SETTINGS_FILE.read_text())
-                # Merge with defaults (handles new keys after updates)
                 return _deep_merge(DEFAULT_SETTINGS.copy(), data)
             except Exception:
                 pass
@@ -89,47 +77,32 @@ class ConfigManager:
     def settings(self) -> dict:
         return self._settings
 
-    # ─── pacman.conf ───────────────────────────────────────────────────────────
-
-    def _read_pacman_conf(self) -> str:
-        return PACMAN_CONF.read_text()
-
     def _write_pacman_conf(self, content: str) -> tuple[bool, str]:
-        """Write content to /etc/pacman.conf via sudo cp."""
-        askpass_path = Path(__file__).resolve().parent / "askpass.py"
-        env = os.environ.copy()
-        env["SUDO_ASKPASS"] = str(askpass_path)
-        display = os.getenv("DISPLAY")
-        if display is not None:
-            env["DISPLAY"] = display
-
         with tempfile.NamedTemporaryFile(mode="w", suffix=".conf", delete=False) as tmp:
             tmp.write(content)
             tmp_path = tmp.name
         try:
-            result = subprocess.run(
-                ["sudo", "-A", "cp", tmp_path, str(PACMAN_CONF)],
-                capture_output=True, text=True, timeout=30,
-                env=env
+            success, stdout, stderr = self.priv.run_sync(
+                ["cp", tmp_path, str(PACMAN_CONF)],
+                timeout=30
             )
             Path(tmp_path).unlink(missing_ok=True)
-            if result.returncode == 0:
+            if success:
                 return True, "OK"
-            return False, result.stderr.strip()
+            return False, stderr
         except Exception as e:
             Path(tmp_path).unlink(missing_ok=True)
             return False, str(e)
 
-    # IgnorePkg
     def get_ignored_packages(self) -> list[str]:
-        content = self._read_pacman_conf()
+        content = PACMAN_CONF.read_text()
         m = re.search(r"^IgnorePkg\s*=\s*(.*)$", content, re.MULTILINE)
         if m:
             return [p.strip() for p in m.group(1).split() if p.strip()]
         return []
 
     def set_ignored_packages(self, packages: list[str]) -> tuple[bool, str]:
-        content = self._read_pacman_conf()
+        content = PACMAN_CONF.read_text()
         line = f"IgnorePkg = {' '.join(packages)}"
         if re.search(r"^IgnorePkg\s*=", content, re.MULTILINE):
             content = re.sub(r"^#?IgnorePkg\s*=.*$", line, content, flags=re.MULTILINE)
@@ -147,14 +120,13 @@ class ConfigManager:
         pkgs = [p for p in self.get_ignored_packages() if p != name]
         return self.set_ignored_packages(pkgs)
 
-    # ParallelDownloads
     def get_parallel_downloads(self) -> int:
-        content = self._read_pacman_conf()
+        content = PACMAN_CONF.read_text()
         m = re.search(r"^#?ParallelDownloads\s*=\s*(\d+)", content, re.MULTILINE)
         return int(m.group(1)) if m else 1
 
     def set_parallel_downloads(self, n: int) -> tuple[bool, str]:
-        content = self._read_pacman_conf()
+        content = PACMAN_CONF.read_text()
         line = f"ParallelDownloads = {n}"
         if re.search(r"^#?ParallelDownloads\s*=", content, re.MULTILINE):
             content = re.sub(r"^#?ParallelDownloads\s*=.*$", line, content, flags=re.MULTILINE)
@@ -162,13 +134,12 @@ class ConfigManager:
             content = re.sub(r"(\[options\])", r"\1\n" + line, content)
         return self._write_pacman_conf(content)
 
-    # Color
     def get_color_enabled(self) -> bool:
-        content = self._read_pacman_conf()
+        content = PACMAN_CONF.read_text()
         return bool(re.search(r"^Color$", content, re.MULTILINE))
 
     def set_color(self, enabled: bool) -> tuple[bool, str]:
-        content = self._read_pacman_conf()
+        content = PACMAN_CONF.read_text()
         if enabled:
             content = re.sub(r"^#Color$", "Color", content, flags=re.MULTILINE)
             if not re.search(r"^Color$", content, re.MULTILINE):
@@ -177,7 +148,6 @@ class ConfigManager:
             content = re.sub(r"^Color$", "#Color", content, flags=re.MULTILINE)
         return self._write_pacman_conf(content)
 
-    # Autostart .desktop management
     def set_autostart(self, enabled: bool):
         self.set("autostart", enabled)
         autostart_dir = Path.home() / ".config" / "autostart"
@@ -191,27 +161,15 @@ class ConfigManager:
         else:
             autostart_file.unlink(missing_ok=True)
 
-    # Shutdown updates systemd service
     def set_shutdown_updates(self, enabled: bool) -> tuple[bool, str]:
         self.set("shutdown_updates", enabled)
         action = "enable" if enabled else "disable"
 
-        askpass_path = Path(__file__).resolve().parent / "askpass.py"
-        env = os.environ.copy()
-        env["SUDO_ASKPASS"] = str(askpass_path)
-        display = os.getenv("DISPLAY")
-        if display is not None:
-            env["DISPLAY"] = display
-
-        try:
-            result = subprocess.run(
-                ["sudo", "-A", "systemctl", action, "wakka-shutdown.service"],
-                capture_output=True, text=True, timeout=15, env=env
-            )
-            return result.returncode == 0, result.stderr.strip()
-        except Exception as e:
-            return False, str(e)
-
+        success, stdout, stderr = self.priv.run_sync(
+            ["systemctl", action, "wakka-shutdown.service"],
+            timeout=15
+        )
+        return success, stderr
 
 def _deep_merge(base: dict, override: dict) -> dict:
     for key, val in override.items():

@@ -3,17 +3,13 @@ Wakka — Repository Manager
 Add, remove, enable, and disable pacman repositories in /etc/pacman.conf.
 """
 from __future__ import annotations
-
-import os
 import re
-import shutil
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from .privilege_helper import PrivilegeHelper
 
 PACMAN_CONF = Path("/etc/pacman.conf")
-
 
 @dataclass
 class Repository:
@@ -23,13 +19,11 @@ class Repository:
     enabled: bool = True
     is_official: bool = False
 
-
 OFFICIAL_REPOS = {"core", "extra", "multilib", "community", "testing", "multilib-testing"}
-
 
 class RepoManager:
     def __init__(self):
-        self._pkexec = shutil.which("pkexec")
+        self.priv = PrivilegeHelper()
 
     def list_repos(self) -> list[Repository]:
         content = PACMAN_CONF.read_text()
@@ -42,7 +36,6 @@ class RepoManager:
         for line in content.splitlines():
             stripped = line.strip()
 
-            # Section header
             header = re.match(r"^\[([^\]]+)\]$", stripped)
             if header:
                 if current_name and current_name.lower() != "options":
@@ -62,7 +55,6 @@ class RepoManager:
             if current_name and current_name.lower() == "options":
                 continue
 
-            # Commented-out server (disabled repo)
             disabled = re.match(r"^#\s*Server\s*=\s*(.+)$", stripped)
             if disabled and current_name:
                 current_enabled = False
@@ -97,14 +89,12 @@ class RepoManager:
 
     def remove_repo(self, name: str) -> tuple[bool, str]:
         content = PACMAN_CONF.read_text()
-        # Remove the whole section
         pattern = rf"\n\[{re.escape(name)}\][^\[]*"
         content = re.sub(pattern, "", content)
         return self._write(content)
 
     def enable_repo(self, name: str) -> tuple[bool, str]:
         content = PACMAN_CONF.read_text()
-        # Remove comment from Server= lines within section
         in_section = False
         lines = content.splitlines(keepends=True)
         out = []
@@ -129,50 +119,29 @@ class RepoManager:
             elif re.match(r"^\[", line.strip()):
                 in_section = False
             if in_section and re.match(r"^Server\s*=", line):
-                line = "#" + line
+                line = "# " + line
             out.append(line)
         return self._write("".join(out))
 
     def refresh_databases(self) -> tuple[bool, str]:
-        # Setup SUDO_ASKPASS
-        askpass_path = Path(__file__).resolve().parent / "askpass.py"
-        env = os.environ.copy()
-        env["SUDO_ASKPASS"] = str(askpass_path)
-        display = os.getenv("DISPLAY")
-        if display is not None:
-            env["DISPLAY"] = display
-
-        try:
-            result = subprocess.run(
-                ["sudo", "-A", "pacman", "-Sy"],
-                capture_output=True, text=True, timeout=120,
-                env=env
-            )
-            return result.returncode == 0, result.stderr.strip()
-        except Exception as e:
-            return False, str(e)
+        success, stdout, stderr = self.priv.run_sync(
+            ["pacman", "-Sy"],
+            timeout=120
+        )
+        return success, stderr
 
     def _write(self, content: str) -> tuple[bool, str]:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".conf", delete=False) as tmp:
             tmp.write(content)
             tmp_path = tmp.name
-        
-        # Setup SUDO_ASKPASS
-        askpass_path = Path(__file__).resolve().parent / "askpass.py"
-        env = os.environ.copy()
-        env["SUDO_ASKPASS"] = str(askpass_path)
-        display = os.getenv("DISPLAY")
-        if display is not None:
-            env["DISPLAY"] = display
 
         try:
-            result = subprocess.run(
-                ["sudo", "-A", "cp", tmp_path, str(PACMAN_CONF)],
-                capture_output=True, text=True, timeout=30,
-                env=env
+            success, stdout, stderr = self.priv.run_sync(
+                ["cp", tmp_path, str(PACMAN_CONF)],
+                timeout=30
             )
             Path(tmp_path).unlink(missing_ok=True)
-            return result.returncode == 0, result.stderr.strip()
+            return success, stderr
         except Exception as e:
             Path(tmp_path).unlink(missing_ok=True)
             return False, str(e)

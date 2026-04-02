@@ -8,11 +8,12 @@ from PyQt6.QtGui import QPalette, QColor
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
-    QLabel, QPushButton, QStackedWidget, QFrame, QApplication
+    QLabel, QPushButton, QStackedWidget, QFrame, QApplication,
 )
+
 from .styles.theme import (
     build_qss, get_colors, set_current_theme,
-    style_separator, style_text,
+    style_separator
 )
 from .pages import UpdatesPage, InstalledPage, BrowsePage, CachePage, SettingsPage, HelpPage
 from .widgets.package_info_dialog import PackageInfoDialog
@@ -302,9 +303,7 @@ class MainWindow(QMainWindow):
         self._updates_page.update_selected_requested.connect(self._pkg.update_selected)
         self._updates_page.check_requested.connect(self._check_updates)
 
-        self._installed_page.remove_requested.connect(
-            lambda name: self._pkg.uninstall([name])
-        )
+        self._installed_page.remove_requested.connect(lambda name: self._pkg.uninstall([name]))
         self._installed_page.remove_multiple_requested.connect(self._pkg.uninstall)
         self._installed_page.refresh_requested.connect(self._load_installed)
 
@@ -333,9 +332,7 @@ class MainWindow(QMainWindow):
         # Settings page
         self._settings_page.theme_changed.connect(self._apply_theme)
         self._settings_page.autostart_changed.connect(self._config.set_autostart)
-        self._settings_page.schedule_changed.connect(
-            lambda enabled, cfg: self._scheduler.apply_schedule(enabled, cfg)
-        )
+        self._settings_page.schedule_changed.connect(lambda enabled, cfg: self._scheduler.apply_schedule(enabled, cfg))
 
         # Scheduler
         self._scheduler.check_requested.connect(self._check_updates)
@@ -476,3 +473,4 @@ class MainWindow(QMainWindow):
 
     def trigger_check_updates(self):
         self._check_updates()
+

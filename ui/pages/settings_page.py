@@ -765,7 +765,7 @@ class AddRepoDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Añadir repositorio"))
-        self.setMinimumWidth(440)
+        self.setMinimumWidth(450)
         layout = QVBoxLayout(self)
         layout.setSpacing(12)
 

@@ -12,7 +12,7 @@ from pathlib import Path
 # ─── Qt HiDPI (must be set BEFORE QApplication) ──────────────────────────────
 os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
 
-from PyQt6.QtCore import QTranslator, QLocale, QLibraryInfo, Qt
+from PyQt6.QtCore import QTranslator, QLocale, QLibraryInfo
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
 # Add parent dir to sys.path so we can import 'wakka' as a package even if run directly
@@ -22,7 +22,7 @@ from core.config_manager import ConfigManager
 from core.package_manager import PackageManager
 from core.cache_manager import CacheManager
 from core.scheduler import UpdateScheduler
-from core.constants import APP_NAME, APP_ID, APP_VERSION, APP_DOMAIN, SUPPORTED_AUR_HELPERS
+from core.constants import APP_NAME, APP_VERSION, APP_DOMAIN, SUPPORTED_AUR_HELPERS
 from ui.main_window import MainWindow
 from ui.tray.tray_icon import TrayIcon
 from ui.styles.theme import build_qss
@@ -50,7 +50,7 @@ def _load_translations(app: QApplication, language: str):
         lang_code = language
 
     # Try to load app-specific translation
-    i18n_dir = Path(__file__).parent / "i18n"
+    i18n_dir = Path(__file__).parent / "ui" / "i18n"
     qm_file = i18n_dir / f"wakka_{lang_code}.qm"
     loaded_translation = False
 
@@ -103,6 +103,8 @@ def main():
     # Don't quit when all windows are closed (tray keeps it alive)
     app.setQuitOnLastWindowClosed(False)
 
+    os.environ["WAKKA_PARENT_PID"] = str(os.getpid())
+
     # ── Config (must be first) ────────────────────────────────────────────
     config = ConfigManager()
 
@@ -133,6 +135,16 @@ def main():
     cache_manager = CacheManager()
     scheduler     = UpdateScheduler()
 
+    # Setup SUDO_ASKPASS and Language
+    askpass_path = Path(__file__).parent / "askpass.py"
+
+    # Ensure askpass.py is executable
+    if askpass_path.exists() and not os.access(askpass_path, os.X_OK):
+        try:
+            askpass_path.chmod(0o755)
+        except Exception:
+            pass
+
     # ── Main Window ───────────────────────────────────────────────────────
     window = MainWindow(pkg_manager, cache_manager, config, scheduler)
     restart_requested = False
@@ -156,9 +168,7 @@ def main():
         tray.update_requested.connect(window.trigger_update_all)
         tray.quit_requested.connect(app.quit)
         window.update_count_changed.connect(tray.set_update_count)
-        window.update_count_changed.connect(
-            lambda n: tray.notify_updates(n) if n > 0 and config.get("notifications", True) else None
-        )
+        window.update_count_changed.connect(lambda n: tray.notify_updates(n) if n > 0 and config.get("notifications", True) else None)
 
         # GNOME warning
         desktop = os.getenv("XDG_CURRENT_DESKTOP", "").upper()

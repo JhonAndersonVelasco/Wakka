@@ -76,7 +76,7 @@ class UpdateScheduler(QObject):
                     elif frequency == "monthly":
                         kwargs["day"] = 1
                     trigger = CronTrigger(**kwargs)
-                    
+
                 self._scheduler.add_job(
                     self._on_trigger,
                     trigger=trigger,

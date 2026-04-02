@@ -353,7 +353,7 @@ COLORS = {
         "text_primary":   "#1a1f36",
         "text_secondary": "#4b5563",
         "text_disabled":  "#9ca3af",
-        "text_on_accent": "#ffffff",
+        "text_on_accent": "#7c6af7",
 
         "border":         "rgba(0,0,0,0.08)",
         "border_focus":   "#7c6af7",
