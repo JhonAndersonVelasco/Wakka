@@ -7,8 +7,18 @@ pre_upgrade() {
 }
 post_upgrade() {
     post_install
+    echo "Wakka has been updated. Please restart it manually."
 }
 pre_remove() {
+    # Cerrar Wakka si está en ejecución
+    if pgrep -x "wakka" > /dev/null 2>&1; then
+        pkill -TERM -x "wakka"
+        sleep 1
+        # Si no terminó con SIGTERM, forzar
+        if pgrep -x "wakka" > /dev/null 2>&1; then
+            pkill -KILL -x "wakka"
+        fi
+    fi
 }
 post_remove() {
     gtk-update-icon-cache -f -t "/usr/share/icons/hicolor"

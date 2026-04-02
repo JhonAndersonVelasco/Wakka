@@ -22,7 +22,7 @@ source=("wakka-${pkgver}.tar.gz::https://github.com/JhonAndersonVelasco/Wakka/ar
 
 sha256sums=('SKIP')
 
-install=(wakka.install)
+install=wakka.install
 
 package() {
   local _src="$srcdir/Wakka-${pkgver}/main"
