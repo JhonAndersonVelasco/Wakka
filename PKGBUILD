@@ -45,11 +45,11 @@ package() {
 
   # Instalar el script principal
   install -m644 "$_src/__init__.py" "$pkgdir/usr/lib/wakka/__init__.py"
-  install -m755 "$_src/main.py" "$pkgdir/usr/lib/wakka/main.py"
+  install -m644 "$_src/main.py" "$pkgdir/usr/lib/wakka/main.py"
 
   # Instalar scripts
   install -m644 "$_src/core/__init__.py" "$pkgdir/usr/lib/wakka/core"
-  install -m644 "$_src/core/askpass.py" "$pkgdir/usr/lib/wakka/core"
+  install -m755 "$_src/core/askpass.py" "$pkgdir/usr/lib/wakka/core"
   install -m644 "$_src/core/cache_manager.py" "$pkgdir/usr/lib/wakka/core"
   install -m644 "$_src/core/config_manager.py" "$pkgdir/usr/lib/wakka/core"
   install -m644 "$_src/core/constants.py" "$pkgdir/usr/lib/wakka/core"
