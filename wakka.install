@@ -1,5 +1,4 @@
 post_install() {
-    chmod +x /usr/lib/wakka/core/askpass.py
     gtk-update-icon-cache -f -t "/usr/share/icons/hicolor"
     update-desktop-database "/usr/share/applications"
     update-mime-database "/usr/share/mime"
