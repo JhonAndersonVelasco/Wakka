@@ -1,7 +1,7 @@
 **/__pycache__/
 *.pyc
-gen_pkgbuild.py
 **/pkg/
 **/src/
-.gitignore
-wakka_*.tar.gz
+*.gitignore
+*.tar.gz
+*.tar.zst
