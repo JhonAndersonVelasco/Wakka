@@ -14,18 +14,44 @@ from typing import Optional
 from PyQt6.QtCore import QObject, QProcess, pyqtSignal, QProcessEnvironment, QLocale
 from .privilege_helper import PrivilegeHelper
 
+
 class PkgSource(Enum):
+    """Package source enumeration."""
     OFFICIAL = "official"
     AUR = "aur"
     LOCAL = "local"
 
+
 class PkgStatus(Enum):
+    """Package installation status enumeration."""
     INSTALLED = auto()
     NOT_INSTALLED = auto()
     UPGRADABLE = auto()
 
+
 @dataclass
 class Package:
+    """
+    Package data class representing a software package.
+
+    Attributes:
+        name: Package name
+        version: Current or available version
+        description: Package description
+        source: Package source (official, AUR, local)
+        status: Installation status
+        installed_version: Currently installed version
+        new_version: Available update version
+        size: Package size
+        url: Package homepage URL
+        licenses: List of licenses
+        depends: List of dependencies
+        provides: List of provided packages
+        maintainer: Package maintainer
+        votes: AUR vote count
+        popularity: AUR popularity score
+        selected: Selection state for batch operations
+    """
     name: str
     version: str
     description: str = ""
@@ -43,7 +69,33 @@ class Package:
     popularity: float = 0.0
     selected: bool = False
 
+
 class PackageManager(QObject):
+    """
+    Core package management operations for Arch-based systems.
+
+    This class provides async wrapper around yay/pacman using QProcess
+    for real-time output streaming. It handles:
+
+    - Package search (official repos + AUR)
+    - Installation/Removal operations
+    - Update checking and execution
+    - Package details retrieval
+
+    Signals:
+        output_line: Emitted for each line of command output
+        operation_started: Emitted when an operation begins
+        operation_finished: Emitted when an operation completes
+        search_results_ready: Emitted with parsed search results
+        installed_packages_ready: Emitted with installed package list
+        updates_found: Emitted with available updates
+
+    Example:
+        >>> pkg_manager = PackageManager(language="es")
+        >>> pkg_manager.search_results_ready.connect(handle_results)
+        >>> pkg_manager.search("firefox")
+    """
+
     output_line = pyqtSignal(str, bool)
     operation_started = pyqtSignal(str)
     operation_finished = pyqtSignal(bool, str, str)
@@ -53,6 +105,13 @@ class PackageManager(QObject):
     updates_found = pyqtSignal(list)
 
     def __init__(self, language: str = "auto", parent: Optional[QObject] = None):
+        """
+        Initialize PackageManager with language configuration.
+
+        Args:
+            language: Language code ('auto', 'es', 'en', or locale string)
+            parent: Optional Qt parent object for memory management
+        """
         super().__init__(parent)
         self._language = language
         self._process: Optional[QProcess] = None
@@ -70,16 +129,28 @@ class PackageManager(QObject):
 
     @property
     def yay_available(self) -> bool:
+        """Check if yay AUR helper is available."""
         return self._yay is not None
 
     @property
     def is_busy(self) -> bool:
+        """Check if an operation is currently in progress."""
         return self._process is not None and self._process.state() != QProcess.ProcessState.NotRunning
 
     def _on_priv_finished(self, success: bool, msg: str, operation: str):
+        """Handle privilege helper operation completion."""
         self.operation_finished.emit(success, msg, operation)
 
     def get_package_details(self, name: str) -> str:
+        """
+        Get detailed package information.
+
+        Args:
+            name: Package name to query
+
+        Returns:
+            Formatted package details string
+        """
         env = self._get_env_dict()
         res = subprocess.run([self._pacman, "-Qi", name], capture_output=True, text=True, env=env)
         if res.returncode == 0:
@@ -91,6 +162,21 @@ class PackageManager(QObject):
         return "Información no disponible"
 
     def search(self, query: str, sort: str = "votes", page: int = 1, direction: str = "desc"):
+        """
+        Search for packages in official repos and AUR.
+
+        Args:
+            query: Search term (package name or description)
+            sort: Sort criteria ('votes', 'popularity', 'name', 'modified')
+            page: Page number for pagination (1-indexed)
+            direction: Sort direction ('asc' or 'desc')
+
+        Emits:
+            search_results_ready: With list of Package objects
+
+        Note:
+            Empty queries emit empty list immediately without execution.
+        """
         if not query.strip():
             self.search_results_ready.emit([])
             return
@@ -104,11 +190,13 @@ class PackageManager(QObject):
         self._run(cmd, args, self._on_search_output, operation="search", ignore_codes=[0, 1])
 
     def _on_search_output(self, stdout: str, _stderr: str):
+        """Process search output and emit results."""
         packages = _parse_search_output(stdout)
         packages = self._apply_search_order(packages)
         self.search_results_ready.emit(packages)
 
     def _apply_search_order(self, packages: list[Package]) -> list[Package]:
+        """Apply sorting to package list based on current settings."""
         reverse = self._last_search_direction == "desc"
         if self._last_search_sort == "name":
             return sorted(packages, key=lambda x: x.name.lower(), reverse=reverse)
@@ -121,6 +209,7 @@ class PackageManager(QObject):
         return list(reversed(packages)) if reverse else packages
 
     def get_installed(self):
+        """Get list of installed packages via pacman -Q."""
         if self._query_process.state() != QProcess.ProcessState.NotRunning:
             return
         self._installed_output = ""
@@ -129,9 +218,11 @@ class PackageManager(QObject):
         self._query_process.start(self._pacman, ["-Q", "--color", "never"])
 
     def _on_installed_ready(self):
+        """Accumulate installed packages output."""
         self._installed_output += self._query_process.readAllStandardOutput().data().decode()
 
     def _on_installed_finished(self, exit_code: int, _exit_status):
+        """Parse and emit installed packages list."""
         try:
             self._query_process.readyReadStandardOutput.disconnect(self._on_installed_ready)
         except Exception:
@@ -149,6 +240,12 @@ class PackageManager(QObject):
         self.installed_packages_ready.emit(packages)
 
     def check_updates(self, silent: bool = False):
+        """
+        Check for available package updates.
+
+        Args:
+            silent: If True, suppress loading UI state
+        """
         self._run(
             self._yay or self._pacman,
             ["-Qu", "--color", "never"],
@@ -159,6 +256,7 @@ class PackageManager(QObject):
         )
 
     def _on_updates_output(self, stdout: str, _stderr: str):
+        """Parse and emit available updates."""
         updates = []
         for line in stdout.strip().splitlines():
             m = re.match(r"(\S+)\s+(\S+)\s+->\s+(\S+)", line)
@@ -174,6 +272,12 @@ class PackageManager(QObject):
         self.updates_found.emit(updates)
 
     def check_updates_sync(self) -> list[Package]:
+        """
+        Synchronously check for available updates.
+
+        Returns:
+            List of Package objects with update information
+        """
         try:
             result = subprocess.run(
                 [self._yay or self._pacman, "-Qu", "--color", "never"],
@@ -196,6 +300,20 @@ class PackageManager(QObject):
             return []
 
     def install(self, packages: list[str]):
+        """
+        Install one or more packages.
+
+        Args:
+            packages: List of package names to install
+
+        Emits:
+            operation_started: With operation identifier
+            operation_finished: With success status and message
+
+        Security:
+            Uses SUDO_ASKPASS for privilege escalation.
+            Requires user authentication via askpass.py dialog.
+        """
         if not packages:
             return
         self.operation_started.emit(f"install:{','.join(packages)}")
@@ -213,6 +331,16 @@ class PackageManager(QObject):
             )
 
     def uninstall(self, packages: list[str]):
+        """
+        Uninstall one or more packages.
+
+        Args:
+            packages: List of package names to remove
+
+        Emits:
+            operation_started: With operation identifier
+            operation_finished: With success status and message
+        """
         if not packages:
             return
         self.operation_started.emit(f"uninstall:{','.join(packages)}")
@@ -222,6 +350,12 @@ class PackageManager(QObject):
         )
 
     def install_files(self, paths: list[str]):
+        """
+        Install packages from local files (.pkg.tar.zst or .deb).
+
+        Args:
+            paths: List of file paths to install
+        """
         package_paths = []
         for path in paths:
             file_path = self._normalize_path(path)
@@ -239,6 +373,7 @@ class PackageManager(QObject):
             self._run_next_package_file()
 
     def _run_next_package_file(self) -> None:
+        """Process next package file in install queue."""
         if self.is_busy or not self._file_install_queue:
             return
         package_file = self._file_install_queue.pop(0)
@@ -257,12 +392,15 @@ class PackageManager(QObject):
         self.priv.run_async(command, operation=operation)
 
     def _is_arch_package(self, file_path: Path) -> bool:
+        """Check if file is an Arch Linux package."""
         return "".join(file_path.suffixes[-3:]) == ".pkg.tar.zst"
 
     def _is_debian_package(self, file_path: Path) -> bool:
+        """Check if file is a Debian package."""
         return file_path.suffix == ".deb"
 
     def _normalize_path(self, path: str) -> Path:
+        """Normalize file path, handling file:// URLs."""
         if path.startswith("file://"):
             from urllib.parse import unquote, urlparse
             parsed = urlparse(path)
@@ -271,6 +409,7 @@ class PackageManager(QObject):
         return Path(path)
 
     def update_all(self):
+        """Update all installed packages."""
         self.operation_started.emit("update_all")
         if self._yay:
             self._run(
@@ -286,6 +425,12 @@ class PackageManager(QObject):
             )
 
     def update_selected(self, packages: list[str]):
+        """
+        Update specific packages.
+
+        Args:
+            packages: List of package names to update
+        """
         if not packages:
             return
         self.operation_started.emit(f"update:{','.join(packages)}")
@@ -303,10 +448,22 @@ class PackageManager(QObject):
             )
 
     def _on_generic_finish(self, stdout: str, stderr: str):
+        """Generic operation finish handler."""
         pass
 
     def _run(self, program: str, args: list[str], on_finish_callback, *,
              operation: str, ignore_codes: list[int] = None, silent: bool = False):
+        """
+        Run command asynchronously with QProcess.
+
+        Args:
+            program: Executable to run
+            args: Command arguments
+            on_finish_callback: Callback for completion
+            operation: Operation identifier for logging
+            ignore_codes: Exit codes to treat as success
+            silent: Suppress output emission
+        """
         if self.is_busy:
             if not silent:
                 self.output_line.emit("[wakka] Operación en progreso, espera...\n", True)
@@ -358,7 +515,7 @@ class PackageManager(QObject):
                 stdout = "".join(stdout_accumulator)
                 stderr = "".join(stderr_accumulator)
 
-                # 🔥 LIMPIAR ESTADO DE ASKPASS SI TODO FUE BIEN
+                # 🔥 Clear askpass state on success
                 if success:
                     from pathlib import Path
                     Path("/tmp/wakka_sudo_attempt").unlink(missing_ok=True)
@@ -378,6 +535,7 @@ class PackageManager(QObject):
         process.start()
 
     def cancel(self):
+        """Cancel current running operation."""
         if self._process is not None and self._process.state() != QProcess.ProcessState.NotRunning:
             self._process.terminate()
             self._process.waitForFinished(3000)
@@ -386,6 +544,7 @@ class PackageManager(QObject):
                 self._process.waitForFinished(3000)
 
     def _get_locale_string(self) -> str:
+        """Get locale string for command environment."""
         if self._language == "auto":
             return QLocale.system().name() + ".UTF-8"
         elif self._language == "es":
@@ -395,13 +554,24 @@ class PackageManager(QObject):
         return self._language + ".UTF-8"
 
     def _get_env_dict(self) -> dict:
+        """Get environment dictionary for subprocess calls."""
         env = os.environ.copy()
         locale_val = self._get_locale_string()
         if locale_val:
             env["LC_ALL"] = locale_val
         return env
 
+
 def _parse_search_output(text: str) -> list[Package]:
+    """
+    Parse yay/pacman search output into Package objects.
+
+    Args:
+        text: Raw command output
+
+    Returns:
+        List of Package objects
+    """
     packages = []
     lines = text.strip().splitlines()
     i = 0
@@ -443,7 +613,17 @@ def _parse_search_output(text: str) -> list[Package]:
         i += 1
     return packages
 
+
 def _parse_info_output(text: str) -> dict:
+    """
+    Parse package info output into dictionary.
+
+    Args:
+        text: Raw pacman -Qi or yay -Si output
+
+    Returns:
+        Dictionary of key-value pairs
+    """
     info = {}
     for line in text.splitlines():
         if ":" in line:

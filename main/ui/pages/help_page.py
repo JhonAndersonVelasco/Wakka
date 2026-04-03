@@ -1,3 +1,7 @@
+"""
+Wakka — Help Page
+Quick help and about information.
+"""
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt, QUrl
@@ -9,6 +13,15 @@ from ..styles.theme import style_text, style_separator, style_title
 
 
 class HelpPage(QWidget):
+    """
+    Help and About page for Wakka application.
+
+    Features:
+        - Quick start guide
+        - Application information
+        - Donate button with external link
+    """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._build_ui()
@@ -41,8 +54,9 @@ class HelpPage(QWidget):
         about_text1 = self.tr("Wakka te ayuda a gestionar paquetes en sistemas basados en Arch con una interfaz sencilla.")
         about_text2 = self.tr("Usa la barra lateral para explorar actualizaciones, paquetes instalados, repositorios y opciones de caché.")
         about_text3 = self.tr("Esta sección ofrece una visión general del programa.")
-        about_text4 = "Jhon Velasco\njhandervelbux@gmail.com\n© 2026 Wakka —"
-        about_text5 = self.tr(" un asistente ligero para gestionar paquetes en sistemas basados en Arch.")
+        # ✅ FIXED: Using tr() for translatable strings
+        about_text4 = self.tr("Jhon Velasco\njhandervelbux@gmail.com\n© 2026 Wakka —")
+        about_text5 = self.tr("un asistente ligero para gestionar paquetes en sistemas basados en Arch.")
         about_text = QLabel(about_text1 +"\n" + about_text2 + "\n" + about_text3 + "\n\n" + about_text4 + about_text5)
         about_text.setWordWrap(True)
         about_text.setStyleSheet(style_text("text_primary", size=13))
@@ -58,4 +72,5 @@ class HelpPage(QWidget):
         layout.addWidget(donate_btn, alignment=Qt.AlignmentFlag.AlignLeft)
 
     def _open_donate_link(self) -> None:
+        """Open donation link in default browser."""
         QDesktopServices.openUrl(QUrl("https://www.paypal.com/donate/?hosted_button_id=FX7FC6R7WJ85W"))

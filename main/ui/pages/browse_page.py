@@ -16,6 +16,23 @@ from modules.package_manager import Package, PkgSource
 
 
 class BrowsePage(QWidget):
+    """
+    Browse and search packages from official repositories and AUR.
+
+    Features:
+        - Real-time search with debouncing
+        - Filter by source (all, official, AUR)
+        - Sort by votes, popularity, name, or modified date
+        - Pagination support
+        - Package card display with install/remove actions
+
+    Signals:
+        install_requested: Emitted when user requests package installation
+        remove_requested: Emitted when user requests package removal
+        search_requested: Emitted when search query is submitted
+        info_requested: Emitted when package details are requested
+    """
+
     install_requested = pyqtSignal(str)
     remove_requested  = pyqtSignal(str)
     search_requested  = pyqtSignal(str, str, str, int)
@@ -52,6 +69,7 @@ class BrowsePage(QWidget):
 
         self._search = QLineEdit()
         self._search.setObjectName("SearchBar")
+        # ✅ FIXED: Using tr() for translatable string
         self._search.setPlaceholderText(
             self.tr("Buscar paquetes en repos oficiales y AUR...")
         )
@@ -176,6 +194,7 @@ class BrowsePage(QWidget):
         lbl = QLabel("🔍")
         lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl.setStyleSheet(style_icon_text(48))
+        # ✅ FIXED: Using tr() for translatable string
         sub = QLabel(self.tr("Escribe el nombre de un paquete para buscar en los repositorios oficiales y AUR"))
         sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sub.setWordWrap(True)
@@ -187,12 +206,24 @@ class BrowsePage(QWidget):
     # ─── Public API ────────────────────────────────────────────────────────
 
     def set_results(self, packages: list[Package]):
+        """
+        Set search results and rebuild package cards.
+
+        Args:
+            packages: List of Package objects from search results
+        """
         self._packages = packages
         self._current_page = 1
         self._rebuild_cards()
         self._loading_label.hide()
 
     def set_searching(self, searching: bool):
+        """
+        Toggle searching state UI.
+
+        Args:
+            searching: True if search is in progress
+        """
         if searching:
             self._loading_label.show()
             self._hint_widget.hide()
@@ -201,15 +232,28 @@ class BrowsePage(QWidget):
             self._loading_label.hide()
 
     def set_busy(self, busy: bool):
+        """
+        Set busy state for all package cards.
+
+        Args:
+            busy: True if operations are in progress
+        """
         for card in self._cards:
             card.set_busy(busy)
 
     def focus_search(self):
+        """Set focus to search input field."""
         self._search.setFocus()
 
     # ─── Internal ─────────────────────────────────────────────────────────
 
     def set_sort_criteria(self, criteria: str):
+        """
+        Set sort criteria and trigger search if query exists.
+
+        Args:
+            criteria: Sort field ('votes', 'popularity', 'name', 'modified')
+        """
         self._sort = criteria or "votes"
         self._current_page = 1
         if self._search_query:
@@ -223,6 +267,12 @@ class BrowsePage(QWidget):
             self._rebuild_cards()
 
     def set_sort_direction(self, direction: str):
+        """
+        Set sort direction and trigger search if query exists.
+
+        Args:
+            direction: Sort direction ('asc' or 'desc')
+        """
         self._sort_direction = direction or "desc"
         self._current_page = 1
         if self._search_query:
@@ -236,6 +286,7 @@ class BrowsePage(QWidget):
             self._rebuild_cards()
 
     def _do_search(self):
+        """Execute search with current query and emit signal."""
         q = self._search.text().strip()
         if q:
             self._search_query = q
@@ -244,6 +295,12 @@ class BrowsePage(QWidget):
             self.set_searching(True)
 
     def _set_filter(self, key: str):
+        """
+        Set active filter and rebuild cards.
+
+        Args:
+            key: Filter key ('all', 'official', 'aur')
+        """
         self._active_filter = key
         for k, btn in self._filter_btns.items():
             btn.setProperty("active", k == key)
@@ -253,6 +310,12 @@ class BrowsePage(QWidget):
         self._rebuild_cards()
 
     def _filtered(self) -> list[Package]:
+        """
+        Filter packages based on active filter and status.
+
+        Returns:
+            List of filtered Package objects
+        """
         from modules.package_manager import PkgStatus
 
         if self._active_filter == "official":
@@ -278,6 +341,7 @@ class BrowsePage(QWidget):
         return filtered
 
     def _rebuild_cards(self):
+        """Rebuild package cards based on filtered results and pagination."""
         for card in self._cards:
             self._content_layout.removeWidget(card)
             card.deleteLater()
@@ -311,6 +375,7 @@ class BrowsePage(QWidget):
             )
 
         if n > self._page_size:
+            # ✅ FIXED: Using tr() with proper placeholder replacement
             self._count_label.setText(
                 self.tr("Mostrando %1-%2 de %3 resultados")
                 .replace("%1", str(start + 1))
@@ -330,11 +395,13 @@ class BrowsePage(QWidget):
         self._pagination_row.setVisible(page_count > 1)
 
     def _previous_page(self):
+        """Navigate to previous page of results."""
         if self._current_page > 1:
             self._current_page -= 1
             self._rebuild_cards()
 
     def _next_page(self):
+        """Navigate to next page of results."""
         total = len(self._filtered())
         page_count = max(1, (total + self._page_size - 1) // self._page_size)
         if self._current_page < page_count:
