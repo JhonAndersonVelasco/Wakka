@@ -1,0 +1,5 @@
+#!/bin/bash
+# Wakka Launcher
+# Ejecuta la aplicación instalada en /usr/lib/wakka/
+export PYTHONPATH="/usr/lib/wakka:$PYTHONPATH"
+exec /usr/bin/python /usr/lib/wakka/main.py "$@"

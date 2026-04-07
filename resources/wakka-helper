@@ -1,0 +1,34 @@
+#!/bin/bash
+# Wakka Package Manager Helper
+# Este script es llamado por pkexec para ejecutar operaciones de yay
+
+ACTION="$1"
+shift  # Remover el primer argumento, el resto son paquetes
+
+case "$ACTION" in
+    install)
+        /usr/bin/yay -S --noconfirm --needed "$@"
+        ;;
+    remove)
+        /usr/bin/yay -Rns --noconfirm "$@"
+        ;;
+    update)
+        /usr/bin/yay -Syu --noconfirm "$@"
+        ;;
+    install-local)
+        /usr/bin/yay -U --noconfirm "$@"
+        ;;
+    clean)
+        /usr/bin/yay -Yc --noconfirm "$@"
+        ;;
+    apply-pacman-conf)
+        /usr/bin/cp "$1" /etc/pacman.conf
+        ;;
+    set-shutdown-service)
+        /usr/bin/systemctl "$1" wakka-shutdown.service
+        ;;
+    *)
+        echo "Acción no válida: $ACTION"
+        exit 1
+        ;;
+esac

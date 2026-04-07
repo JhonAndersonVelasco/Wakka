@@ -1,0 +1,15 @@
+pre_remove() {
+    echo "Deteniendo y deshabilitando wakka-shutdown.service..."
+    systemctl stop wakka-shutdown.service >/dev/null 2>&1 || true
+    systemctl disable wakka-shutdown.service >/dev/null 2>&1 || true
+}
+
+post_upgrade() {
+    # Recargar el daemon para reconocer cambios en el archivo del servicio
+    systemctl daemon-reload
+}
+
+post_install() {
+    # Recargar el daemon por si acaso
+    systemctl daemon-reload
+}

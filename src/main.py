@@ -1,0 +1,83 @@
+import os
+import sys
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QIcon
+from gui.main_window import MainWindow
+from i18n.translator import Translator
+from core.config_manager import ConfigManager
+from PyQt6.QtGui import QPalette, QColor
+from PyQt6.QtCore import Qt
+
+def apply_theme(app, theme_name):
+    if theme_name == "system":
+        return
+        
+    app.setStyle("Fusion")
+    if theme_name == "dark":
+        palette = QPalette()
+        palette.setColor(QPalette.ColorRole.Window, QColor(45, 45, 45))
+        palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+        palette.setColor(QPalette.ColorRole.Base, QColor(30, 30, 30))
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(45, 45, 45))
+        palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(45, 45, 45))
+        palette.setColor(QPalette.ColorRole.ToolTipText, Qt.GlobalColor.white)
+        palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.white)
+        palette.setColor(QPalette.ColorRole.Button, QColor(53, 53, 53))
+        palette.setColor(QPalette.ColorRole.ButtonText, Qt.GlobalColor.white)
+        palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
+        palette.setColor(QPalette.ColorRole.Link, QColor(42, 130, 218))
+        palette.setColor(QPalette.ColorRole.Highlight, QColor(42, 130, 218))
+        palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.black)
+        app.setPalette(palette)
+    elif theme_name == "light":
+        palette = QPalette()
+        palette.setColor(QPalette.ColorRole.Window, QColor(245, 245, 245))
+        palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.black)
+        palette.setColor(QPalette.ColorRole.Base, Qt.GlobalColor.white)
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(240, 240, 240))
+        palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(255, 255, 220))
+        palette.setColor(QPalette.ColorRole.ToolTipText, Qt.GlobalColor.black)
+        palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.black)
+        palette.setColor(QPalette.ColorRole.Button, QColor(245, 245, 245))
+        palette.setColor(QPalette.ColorRole.ButtonText, Qt.GlobalColor.black)
+        palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
+        palette.setColor(QPalette.ColorRole.Link, QColor(42, 130, 218))
+        palette.setColor(QPalette.ColorRole.Highlight, QColor(42, 130, 218))
+        palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.white)
+        app.setPalette(palette)
+
+def main():
+    app = QApplication(sys.argv)
+    app.setApplicationName("Wakka")
+    app.setDesktopFileName("wakka")
+
+    # Cargar traducciones (Wakka + Qt Base)
+    translator = Translator()
+    translator.load(app)
+
+    # Intentar cargar desde el tema del sistema primero
+    icon = QIcon.fromTheme("wakka")
+
+    # Fallback a la ruta de instalación local si no está en el tema todavía
+    if icon.isNull():
+        fallback_path = "/usr/share/icons/hicolor/scalable/apps/wakka.svg"
+        if os.path.exists(fallback_path):
+            icon = QIcon(fallback_path)
+        else:
+            icon = QIcon.fromTheme("package-manager")
+
+    # Aplicar Tema
+    config = ConfigManager()
+    apply_theme(app, config.get("theme", "system"))
+
+    window = MainWindow()
+    
+    # Si se inicia con --tray, no mostramos la ventana principal
+    if "--tray" not in sys.argv:
+        window.show()
+
+    sys.exit(app.exec())
+
+if __name__ == "__main__":
+    main()
+    

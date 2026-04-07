@@ -1,0 +1,83 @@
+wakka/
+├── src/
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── package_manager.py
+│   │   ├── yay_wrapper.py
+│   │   ├── system_tray.py
+│   │   ├── scheduler.py
+│   │   └── google_client.py
+│   ├── gui/
+│   │   ├── __init__.py
+│   │   ├── main_window.py
+│   │   ├── tabs/
+│   │   │   ├── __init__.py
+│   │   │   ├── suggestions_tab.py
+│   │   │   ├── updates_tab.py
+│   │   │   ├── search_tab.py
+│   │   │   └── installed_tab.py
+│   │   └── dialogs/
+│   │       ├── terminal_dialog.py
+│   │       ├── settings_dialog.py
+│   │       └── translation_manager.py
+│   ├── i18n/
+│   │   ├── __init__.py
+│   │   └── translator.py
+│   └── main.py
+├── translations/
+│   ├── template.ts
+│   ├── es.ts
+│   └── en.ts
+├── resources/
+│   └── icons/
+├── wakka.desktop
+└── requirements.txt
+
+
+## Instrucciones de Instalación
+
+1. **Instalar dependencias:**
+```bash
+sudo pacman -S python-pyqt6 python-pip yay
+```
+
+2. **Estructura de directorios:**
+```bash
+mkdir -p ~/wakka/src/{core,gui/tabs,gui/dialogs,i18n}
+mkdir -p ~/wakka/translations
+```
+
+3. **Copiar los archivos** en sus respectivas ubicaciones según la estructura anterior.
+
+4. **Hacer ejecutable:**
+```bash
+chmod +x ~/wakka/src/main.py
+sudo ln -s ~/wakka/src/main.py /usr/local/bin/wakka
+```
+
+5. **Instalar archivo desktop:**
+```bash
+sudo cp wakka.desktop /usr/share/applications/
+sudo update-desktop-database
+```
+
+6. **Configurar MIME types** (opcional, para instalar paquetes al hacer doble clic):
+```bash
+xdg-mime default wakka.desktop application/x-archlinux-package
+```
+
+## Características Implementadas
+
+✅ **Multi-idioma:** Sistema de traducción con Qt Linguist (.ts files)
+✅ **4 Pestañas:** Sugerencias, Actualizaciones, Buscar, Instaladas
+✅ **Integración google:** Botón "Info" abre navegador preguntando a google
+✅ **Iconos:** Muestra iconos reales del sistema para cada paquete
+✅ **Instalación local:** Soporte .pkg.tar.zst, .deb, .rpm
+✅ **Temas:** Sistema/Claro/Oscuro
+✅ **Limpieza:** Botones para limpiar caché y huérfanos
+✅ **Editor pacman.conf:** Con opciones rápidas (ILoveCandy, paralelismo)
+✅ **Programación:** Diaria/semanal configurables
+✅ **Bandeja del sistema:** Con badge de actualizaciones
+✅ **Terminal modal:** Para todas las operaciones con botón cancelar
+
+¿Necesitas que profundice en alguna parte específica o que añada alguna funcionalidad adicional?
