@@ -1,20 +1,35 @@
 import os
+import datetime
+import calendar
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu
 from PyQt6.QtGui import QIcon, QColor, QPixmap, QPainter, QAction, QFont
-from PyQt6.QtCore import Qt, pyqtSignal, QObject, QRect
+from PyQt6.QtCore import Qt, pyqtSignal, QObject, QRect, QTimer
 
 class TrayIcon(QObject):
     show_window = pyqtSignal()
     quit_app = pyqtSignal()
     update_requested = pyqtSignal()
+    updates_checked = pyqtSignal(int)
 
-    def __init__(self, parent=None):
+    def __init__(self, yay_wrapper, config_mgr, cache_mgr, parent=None):
         super().__init__(parent)
+        self.yay = yay_wrapper
+        self.config_mgr = config_mgr
+        self.cache_mgr = cache_mgr
+        
         self.tray = QSystemTrayIcon(parent)
         self.update_count = 0
+        self._last_update_hour = -1
+        self._last_clean_hour = -1
+        
         self.create_menu()
         self.update_icon()
         self.tray.activated.connect(self.on_activated)
+        
+        # Timer para chequear actualizaciones (Tick cada 15 min)
+        self.scheduler_timer = QTimer()
+        self.scheduler_timer.timeout.connect(self._scheduler_tick)
+        self.scheduler_timer.start(900000)  # 15 minutos
 
     def create_menu(self):
         self.menu = QMenu()
@@ -26,7 +41,7 @@ class TrayIcon(QObject):
 
         self.update_action = QAction(self.tr("Sistema actualizado"), self)
         self.update_action.setIcon(QIcon.fromTheme("software-update-available"))
-        self.update_action.setEnabled(False)  # deshabilitado hasta que haya actualizaciones
+        self.update_action.setEnabled(False)
         self.update_action.triggered.connect(self.update_requested.emit)
         self.menu.addAction(self.update_action)
 
@@ -51,10 +66,8 @@ class TrayIcon(QObject):
 
     def update_icon(self):
         """Genera icono con badge de notificación sobre el logo de Wakka"""
-        # Intentar cargar desde el tema del sistema primero
         icon = QIcon.fromTheme("wakka")
 
-        # Fallbacks si no está cargado
         if icon.isNull():
             candidates = [
                 "/usr/share/icons/hicolor/scalable/apps/wakka.svg",
@@ -70,20 +83,17 @@ class TrayIcon(QObject):
                 icon = QIcon.fromTheme("package-manager")
 
         if self.update_count > 0:
-            # Crear un pixmap de alta resolución basado en el icono original
             pixmap = icon.pixmap(48, 48)
             painter = QPainter(pixmap)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-            # Dibujar un círculo rojo para el badge (esquina superior derecha)
             badge_size = 22
             badge_rect = QRect(48 - badge_size, 0, badge_size, badge_size)
 
-            painter.setBrush(QColor("#f44336")) # Rojo vibrante
+            painter.setBrush(QColor("#f44336"))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawEllipse(badge_rect)
 
-            # Dibujar el número de actualizaciones
             painter.setPen(QColor("white"))
             painter.setFont(QFont("Sans Serif", 9, QFont.Weight.Bold))
             painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, str(self.update_count))
@@ -100,7 +110,6 @@ class TrayIcon(QObject):
 
     def on_activated(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
-            # Al hacer clic sencillo, alternamos visibilidad
             parent = self.parent()
             if parent:
                 if parent.isVisible():
@@ -108,6 +117,86 @@ class TrayIcon(QObject):
                 else:
                     parent.showNormal()
                     parent.activateWindow()
+
+    def _scheduler_tick(self):
+        now = datetime.datetime.now()
+        
+        # 1. Comprobar Actualizaciones
+        update_sched = self.config_mgr.get("update_schedule", {})
+        if self._should_run_now(update_sched, self._last_update_hour, now):
+            self._last_update_hour = now.hour
+            self.check_updates_silent()
+            
+        # 2. Comprobar Limpieza de Caché
+        cache_sched = self.config_mgr.get("cache.schedule", {})
+        if self._should_run_now(cache_sched, self._last_clean_hour, now):
+            self._last_clean_hour = now.hour
+            self._run_auto_clean(self.config_mgr.get("cache.keep_versions", 1))
+
+    def _should_run_now(self, sched: dict, last_hour: int, now: datetime.datetime) -> bool:
+        if not sched.get("enabled", False):
+            return False
+
+        freq = sched.get("frequency", "daily")
+        
+        if freq == "hourly":
+            interval = sched.get("interval_hours", 6)
+            return now.hour % interval == 0 and now.hour != last_hour
+            
+        if freq == "daily":
+            target_h = sched.get("hour", 12)
+            return now.hour == target_h and now.hour != last_hour
+            
+        if freq == "weekly":
+            day_map = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
+                       "friday": 4, "saturday": 5, "sunday": 6}
+            target_d = day_map.get(sched.get("day", "saturday"), 5)
+            target_h = sched.get("hour", 12)
+            return now.weekday() == target_d and now.hour == target_h and now.hour != last_hour
+            
+        if freq == "monthly":
+            target_day_str = str(sched.get("day", "1"))
+            target_h = sched.get("hour", 12)
+            
+            is_target_day = False
+            if target_day_str == "Último día del mes":
+                last_day = calendar.monthrange(now.year, now.month)[1]
+                if now.day == last_day:
+                    is_target_day = True
+            else:
+                try:
+                    num = int(target_day_str.replace("día ", ""))
+                    if now.day == num:
+                        is_target_day = True
+                except ValueError:
+                    pass
+            
+            return is_target_day and now.hour == target_h and now.hour != last_hour
+            
+        return False
+
+    def _run_auto_clean(self, keep: int):
+        self.cache_mgr.clean_pacman_cache(keep)
+        self.cache_mgr.clean_yay_cache()
+        self.cache_mgr.clean_orphans()
+        
+        if self.config_mgr.get("notifications", True):
+            self.show_notification(
+                self.tr("Limpieza automática"),
+                self.tr("Se ha ejecutado la limpieza programada del sistema.")
+            )
+
+    def check_updates_silent(self):
+        updates = self.yay.get_available_updates()
+        count = len(updates)
+        self.set_update_count(count)
+        self.updates_checked.emit(count)
+
+        if count > 0 and self.config_mgr.get("notifications", True):
+            self.show_notification(
+                self.tr("Actualizaciones disponibles"),
+                self.tr("Hay {0} paquetes listos para actualizar").format(count)
+            )
 
     def show(self):
         self.tray.show()
