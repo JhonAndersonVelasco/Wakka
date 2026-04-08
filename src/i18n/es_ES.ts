@@ -4,104 +4,219 @@
 <context>
     <name>CacheTab</name>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="50" />
+        <location filename="../gui/tabs/cache_tab.py" line="51" />
         <source>🧹 Limpieza del Sistema</source>
         <translation>🧹 Limpieza del Sistema</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="54" />
+        <location filename="../gui/tabs/cache_tab.py" line="55" />
         <source>Elimina archivos innecesarios y huérfanos para liberar espacio en el disco</source>
         <translation>Elimina archivos innecesarios y huérfanos para liberar espacio en el disco</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="74" />
+        <location filename="../gui/tabs/cache_tab.py" line="75" />
         <source>Caché del sistema</source>
         <translation>Caché del sistema</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="84" />
+        <location filename="../gui/tabs/cache_tab.py" line="85" />
         <source>tamaño total de caché</source>
         <translation>tamaño total de caché</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="93" />
+        <location filename="../gui/tabs/cache_tab.py" line="94" />
         <source>Refrescar</source>
         <translation>Refrescar</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="95" />
+        <location filename="../gui/tabs/cache_tab.py" line="96" />
         <source>Actualizar tamaños de almacenamiento</source>
         <translation>Actualizar tamaños de almacenamiento</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="109" />
+        <location filename="../gui/tabs/cache_tab.py" line="110" />
         <source>AUR (yay)</source>
         <translation>AUR (yay)</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="116" />
+        <location filename="../gui/tabs/cache_tab.py" line="118" />
+        <source>Programación de limpieza</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="121" />
+        <source>Limpiar automáticamente</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="122" />
+        <source>Habilita la limpieza automática de caché y paquetes huérfanos.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="126" />
+        <source>Frecuencia:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="131" />
+        <source>Diariamente</source>
+        <translation type="unfinished">Diariamente</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="131" />
+        <source>Semanalmente</source>
+        <translation type="unfinished">Semanalmente</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="131" />
+        <source>Mensualmente</source>
+        <translation type="unfinished">Mensualmente</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="138" />
+        <source>cada 6 horas</source>
+        <translation type="unfinished">cada 6 horas</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="138" />
+        <source>cada 12 horas</source>
+        <translation type="unfinished">cada 12 horas</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="322" />
+        <location filename="../gui/tabs/cache_tab.py" line="313" />
+        <location filename="../gui/tabs/cache_tab.py" line="142" />
+        <source>Lunes</source>
+        <translation type="unfinished">Lunes</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="313" />
+        <location filename="../gui/tabs/cache_tab.py" line="142" />
+        <source>Martes</source>
+        <translation type="unfinished">Martes</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="313" />
+        <location filename="../gui/tabs/cache_tab.py" line="142" />
+        <source>Miércoles</source>
+        <translation type="unfinished">Miércoles</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="313" />
+        <location filename="../gui/tabs/cache_tab.py" line="142" />
+        <source>Jueves</source>
+        <translation type="unfinished">Jueves</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="313" />
+        <location filename="../gui/tabs/cache_tab.py" line="142" />
+        <source>Viernes</source>
+        <translation type="unfinished">Viernes</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="313" />
+        <location filename="../gui/tabs/cache_tab.py" line="142" />
+        <source>Sábado</source>
+        <translation type="unfinished">Sábado</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="313" />
+        <location filename="../gui/tabs/cache_tab.py" line="142" />
+        <source>Domingo</source>
+        <translation type="unfinished">Domingo</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="169" />
         <source>Caché de Pacman</source>
         <translation>Caché de Pacman</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="121" />
+        <location filename="../gui/tabs/cache_tab.py" line="174" />
         <source>Conservar versiones por paquete:</source>
         <translation>Conservar versiones por paquete:</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="125" />
+        <location filename="../gui/tabs/cache_tab.py" line="178" />
         <source>Número de versiones de paquete antiguas a conservar.</source>
         <translation>Número de versiones de paquete antiguas a conservar.</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="136" />
+        <location filename="../gui/tabs/cache_tab.py" line="189" />
         <source>🧹 Limpiar versiones antiguas de caché de Pacman</source>
         <translation>🧹 Limpiar versiones antiguas de caché de Pacman</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="137" />
+        <location filename="../gui/tabs/cache_tab.py" line="190" />
         <source>Elimina instalaciones antiguas, útil para liberar espacio sin borrar todo.</source>
         <translation>Elimina instalaciones antiguas, útil para liberar espacio sin borrar todo.</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="142" />
+        <location filename="../gui/tabs/cache_tab.py" line="195" />
         <source>🗑 Eliminar caché de desinstalados</source>
         <translation>🗑 Eliminar caché de desinstalados</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="143" />
+        <location filename="../gui/tabs/cache_tab.py" line="196" />
         <source>Elimina la caché estricta de todos los programas que ya no tienes en tu sistema.</source>
         <translation>Elimina la caché estricta de todos los programas que ya no tienes en tu sistema.</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="150" />
+        <location filename="../gui/tabs/cache_tab.py" line="203" />
         <source>Caché de AUR</source>
         <translation>Caché de AUR</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="153" />
+        <location filename="../gui/tabs/cache_tab.py" line="206" />
         <source>🧹 Limpiar caché AUR</source>
         <translation>🧹 Limpiar caché AUR</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="154" />
+        <location filename="../gui/tabs/cache_tab.py" line="207" />
         <source>Elimina los directorios de compilación de yay en ~/.cache/yay/</source>
         <translation>Elimina los directorios de compilación de yay en ~/.cache/yay/</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="159" />
+        <location filename="../gui/tabs/cache_tab.py" line="212" />
         <source>Paquetes huérfanos</source>
         <translation>Paquetes huérfanos</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="162" />
+        <location filename="../gui/tabs/cache_tab.py" line="215" />
         <source>🗑 Eliminar paquetes huérfanos</source>
         <translation>🗑 Eliminar paquetes huérfanos</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/cache_tab.py" line="163" />
+        <location filename="../gui/tabs/cache_tab.py" line="216" />
         <source>Los paquetes huérfanos fueron instalados como dependencias y ya no son necesarios.</source>
         <translation>Los paquetes huérfanos fueron instalados como dependencias y ya no son necesarios.</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="330" />
+        <location filename="../gui/tabs/cache_tab.py" line="316" />
+        <location filename="../gui/tabs/cache_tab.py" line="306" />
+        <source>a las</source>
+        <translation type="unfinished">a las</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="315" />
+        <source>cada</source>
+        <translation type="unfinished">cada</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="325" />
+        <source>día {0}</source>
+        <translation type="unfinished">día {0}</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="326" />
+        <source>Último día del mes</source>
+        <translation type="unfinished">Último día del mes</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/cache_tab.py" line="329" />
+        <source>el</source>
+        <translation type="unfinished">el</translation>
     </message>
 </context><context>
     <name>GoogleClient</name>
@@ -214,119 +329,132 @@
         <translation>Wakka - Gestor de Paquetes</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="38" />
-        <source>Instalaciones automáticas</source>
-        <translation>Instalaciones automáticas</translation>
-    </message>
-    <message>
-        <location filename="../gui/main_window.py" line="39" />
-        <source>El servicio de instalación de actualizaciones al apagar el equipo estaba activo.
-
-Se te solicitará tu contraseña (pkexec) a continuación para volver a habilitar este servicio del sistema interactuando con systemctl.</source>
-        <translation>El servicio de instalación de actualizaciones al apagar el equipo estaba activo.
-
-Se te solicitará tu contraseña (pkexec) a continuación para volver a habilitar este servicio del sistema interactuando con systemctl.</translation>
-    </message>
-    <message>
-        <location filename="../gui/main_window.py" line="58" />
+        <location filename="../gui/main_window.py" line="51" />
         <source>⭐ Sugerencias</source>
         <translation>⭐ Sugerencias</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="65" />
+        <location filename="../gui/main_window.py" line="59" />
         <source>⬆️ Actualizaciones</source>
         <translation>⬆️ Actualizaciones</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="73" />
+        <location filename="../gui/main_window.py" line="67" />
         <source>🔍 Buscar</source>
         <translation>🔍 Buscar</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="80" />
+        <location filename="../gui/main_window.py" line="74" />
         <source>📦 Instaladas</source>
         <translation>📦 Instaladas</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="89" />
+        <location filename="../gui/main_window.py" line="83" />
         <source>🧹 Limpieza</source>
         <translation>🧹 Limpieza</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="93" />
+        <location filename="../gui/main_window.py" line="87" />
         <source>⚙️ Configuración</source>
         <translation>⚙️ Configuración</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="99" />
+        <location filename="../gui/main_window.py" line="93" />
         <source>Listo</source>
         <translation>Listo</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="170" />
+        <location filename="../gui/main_window.py" line="175" />
+        <source>Limpieza automática</source>
+        <translation>Limpieza automática</translation>
+    </message>
+    <message>
+        <location filename="../gui/main_window.py" line="176" />
+        <source>Se ha ejecutado la limpieza programada del sistema.</source>
+        <translation>Se ha ejecutado la limpieza programada del sistema.</translation>
+    </message>
+    <message>
+        <location filename="../gui/main_window.py" line="189" />
         <source>Actualizaciones disponibles</source>
         <translation>Actualizaciones disponibles</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="171" />
+        <location filename="../gui/main_window.py" line="190" />
         <source>Hay {0} paquetes listos para actualizar</source>
         <translation>Hay {0} paquetes listos para actualizar</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="191" />
-        <location filename="../gui/main_window.py" line="175" />
+        <location filename="../gui/main_window.py" line="210" />
+        <location filename="../gui/main_window.py" line="194" />
         <source>Instalando {0}</source>
         <translation>Instalando {0}</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="183" />
+        <location filename="../gui/main_window.py" line="202" />
         <source>Instalando {0} paquetes</source>
         <translation>Instalando {0} paquetes</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="198" />
+        <location filename="../gui/main_window.py" line="217" />
         <source>Desinstalando {0}</source>
         <translation>Desinstalando {0}</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="206" />
+        <location filename="../gui/main_window.py" line="225" />
         <source>Desinstalando {0} paquetes</source>
         <translation>Desinstalando {0} paquetes</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="214" />
+        <location filename="../gui/main_window.py" line="233" />
         <source>Actualizando sistema completo</source>
         <translation>Actualizando sistema completo</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="225" />
+        <location filename="../gui/main_window.py" line="241" />
+        <source>Sincronizando bases de datos</source>
+        <translation>Sincronizando bases de datos</translation>
+    </message>
+    <message>
+        <location filename="../gui/main_window.py" line="252" />
         <source>Limpiando caché de Pacman</source>
         <translation>Limpiando caché de Pacman</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="233" />
+        <location filename="../gui/main_window.py" line="260" />
         <source>Limpiando caché de paquetes desinstalados</source>
         <translation>Limpiando caché de paquetes desinstalados</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="241" />
+        <location filename="../gui/main_window.py" line="268" />
         <source>Limpiando caché de AUR</source>
         <translation>Limpiando caché de AUR</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="249" />
+        <location filename="../gui/main_window.py" line="276" />
         <source>Eliminando paquetes huérfanos</source>
         <translation>Eliminando paquetes huérfanos</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="278" />
+        <location filename="../gui/main_window.py" line="303" />
         <source>Wakka sigue ejecutándose</source>
         <translation>Wakka sigue ejecutándose</translation>
     </message>
     <message>
-        <location filename="../gui/main_window.py" line="279" />
+        <location filename="../gui/main_window.py" line="304" />
         <source>La aplicación se ha minimizado a la bandeja del sistema</source>
         <translation>La aplicación se ha minimizado a la bandeja del sistema</translation>
+    </message>
+    <message>
+        <source>Instalaciones automáticas</source>
+        <translation type="vanished">Instalaciones automáticas</translation>
+    </message>
+    <message>
+        <source>El servicio de instalación de actualizaciones al apagar el equipo estaba activo.
+
+Se te solicitará tu contraseña (pkexec) a continuación para volver a habilitar este servicio del sistema interactuando con systemctl.</source>
+        <translation type="vanished">El servicio de instalación de actualizaciones al apagar el equipo estaba activo.
+
+Se te solicitará tu contraseña (pkexec) a continuación para volver a habilitar este servicio del sistema interactuando con systemctl.</translation>
     </message>
 </context><context>
     <name>PackageCard</name>
@@ -445,7 +573,7 @@ Se te solicitará tu contraseña (pkexec) a continuación para volver a habilita
         <translation>General</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="454" />
+        <location filename="../gui/tabs/settings_tab.py" line="448" />
         <location filename="../gui/tabs/settings_tab.py" line="80" />
         <source>Sistema</source>
         <translation>Sistema</translation>
@@ -516,344 +644,361 @@ Se te solicitará tu contraseña (pkexec) a continuación para volver a habilita
         <translation>Generar/Agregar nueva plantilla lingüística</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="155" />
-        <source>Aplicar Cambios</source>
-        <translation>Aplicar Cambios</translation>
-    </message>
-    <message>
-        <location filename="../gui/tabs/settings_tab.py" line="156" />
-        <source>Aplica y guarda los cambios de la sección (puede requerir reinicio).</source>
-        <translation>Aplica y guarda los cambios de la sección (puede requerir reinicio).</translation>
-    </message>
-    <message>
-        <location filename="../gui/tabs/settings_tab.py" line="164" />
+        <location filename="../gui/tabs/settings_tab.py" line="153" />
         <source>Actualizaciones</source>
         <translation>Actualizaciones</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="167" />
+        <location filename="../gui/tabs/settings_tab.py" line="156" />
         <source>Mostrar notificaciones</source>
         <translation>Mostrar notificaciones</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="168" />
+        <location filename="../gui/tabs/settings_tab.py" line="157" />
         <source>Habilita o deshabilita notificaciones en el sistema.</source>
         <translation>Habilita o deshabilita notificaciones en el sistema.</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="174" />
+        <location filename="../gui/tabs/settings_tab.py" line="163" />
         <source>Instalar al apagar el equipo</source>
         <translation>Instalar al apagar el equipo</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="175" />
+        <location filename="../gui/tabs/settings_tab.py" line="164" />
         <source>Requiere habilitar el servicio systemd wakka-shutdown.service</source>
         <translation>Requiere habilitar el servicio systemd wakka-shutdown.service</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="190" />
+        <location filename="../gui/tabs/settings_tab.py" line="179" />
         <source>Al iniciar</source>
         <translation>Al iniciar</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="190" />
+        <location filename="../gui/tabs/settings_tab.py" line="179" />
         <source>Cada hora</source>
         <translation>Cada hora</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="190" />
+        <location filename="../gui/tabs/settings_tab.py" line="179" />
         <source>Diariamente</source>
         <translation>Diariamente</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="191" />
+        <location filename="../gui/tabs/settings_tab.py" line="180" />
         <source>Semanalmente</source>
         <translation>Semanalmente</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="191" />
+        <location filename="../gui/tabs/settings_tab.py" line="180" />
         <source>Mensualmente</source>
         <translation>Mensualmente</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="191" />
+        <location filename="../gui/tabs/settings_tab.py" line="180" />
         <source>Manualmente</source>
         <translation>Manualmente</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="193" />
+        <location filename="../gui/tabs/settings_tab.py" line="182" />
         <source>Frecuencia con la que se revisan automáticamente las actualizaciones.</source>
         <translation>Frecuencia con la que se revisan automáticamente las actualizaciones.</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="203" />
+        <location filename="../gui/tabs/settings_tab.py" line="192" />
         <source>cada 6 horas</source>
         <translation>cada 6 horas</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="203" />
+        <location filename="../gui/tabs/settings_tab.py" line="192" />
         <source>cada 12 horas</source>
         <translation>cada 12 horas</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="652" />
-        <location filename="../gui/tabs/settings_tab.py" line="643" />
-        <location filename="../gui/tabs/settings_tab.py" line="207" />
+        <location filename="../gui/tabs/settings_tab.py" line="633" />
+        <location filename="../gui/tabs/settings_tab.py" line="624" />
+        <location filename="../gui/tabs/settings_tab.py" line="196" />
         <source>Lunes</source>
         <translation>Lunes</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="643" />
-        <location filename="../gui/tabs/settings_tab.py" line="207" />
+        <location filename="../gui/tabs/settings_tab.py" line="624" />
+        <location filename="../gui/tabs/settings_tab.py" line="196" />
         <source>Martes</source>
         <translation>Martes</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="643" />
-        <location filename="../gui/tabs/settings_tab.py" line="207" />
+        <location filename="../gui/tabs/settings_tab.py" line="624" />
+        <location filename="../gui/tabs/settings_tab.py" line="196" />
         <source>Miércoles</source>
         <translation>Miércoles</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="643" />
-        <location filename="../gui/tabs/settings_tab.py" line="207" />
+        <location filename="../gui/tabs/settings_tab.py" line="624" />
+        <location filename="../gui/tabs/settings_tab.py" line="196" />
         <source>Jueves</source>
         <translation>Jueves</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="643" />
-        <location filename="../gui/tabs/settings_tab.py" line="207" />
+        <location filename="../gui/tabs/settings_tab.py" line="624" />
+        <location filename="../gui/tabs/settings_tab.py" line="196" />
         <source>Viernes</source>
         <translation>Viernes</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="643" />
-        <location filename="../gui/tabs/settings_tab.py" line="207" />
+        <location filename="../gui/tabs/settings_tab.py" line="624" />
+        <location filename="../gui/tabs/settings_tab.py" line="196" />
         <source>Sábado</source>
         <translation>Sábado</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="643" />
-        <location filename="../gui/tabs/settings_tab.py" line="207" />
+        <location filename="../gui/tabs/settings_tab.py" line="624" />
+        <location filename="../gui/tabs/settings_tab.py" line="196" />
         <source>Domingo</source>
         <translation>Domingo</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="225" />
+        <location filename="../gui/tabs/settings_tab.py" line="214" />
         <source>Buscar actualizaciones:</source>
         <translation>Buscar actualizaciones:</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="232" />
+        <location filename="../gui/tabs/settings_tab.py" line="221" />
         <source>Editar pacman.conf</source>
         <translation>Editar pacman.conf</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="238" />
+        <location filename="../gui/tabs/settings_tab.py" line="227" />
         <source>Descarga paquetes simultáneamente para aumentar velocidad (edita pacman.conf).</source>
         <translation>Descarga paquetes simultáneamente para aumentar velocidad (edita pacman.conf).</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="241" />
+        <location filename="../gui/tabs/settings_tab.py" line="230" />
         <source>Descargas paralelas:</source>
         <translation>Descargas paralelas:</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="245" />
+        <location filename="../gui/tabs/settings_tab.py" line="234" />
         <source>Paquetes omitidos en actualizaciones (IgnorePkg) separados por espacio:</source>
         <translation>Paquetes omitidos en actualizaciones (IgnorePkg) separados por espacio:</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="249" />
+        <location filename="../gui/tabs/settings_tab.py" line="238" />
         <source>Nombres exactos de paquetes que deseas excluir de las actualizaciones.</source>
         <translation>Nombres exactos de paquetes que deseas excluir de las actualizaciones.</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="251" />
+        <location filename="../gui/tabs/settings_tab.py" line="240" />
         <source>Repositorios de terceros (ej: [chaotic-aur]):</source>
         <translation>Repositorios de terceros (ej: [chaotic-aur]):</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="256" />
+        <location filename="../gui/tabs/settings_tab.py" line="245" />
         <source>Añade las cabeceras de tus repositorios. Omite [core], [extra] y [multilib].</source>
         <translation>Añade las cabeceras de tus repositorios. Omite [core], [extra] y [multilib].</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="265" />
+        <location filename="../gui/tabs/settings_tab.py" line="254" />
         <source>Aplicar todo en pacman.conf</source>
         <translation>Aplicar todo en pacman.conf</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="266" />
+        <location filename="../gui/tabs/settings_tab.py" line="255" />
         <source>Guarda y escribe todos los cambios en el archivo del sistema.</source>
         <translation>Guarda y escribe todos los cambios en el archivo del sistema.</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="401" />
-        <source>Reinicio requerido</source>
-        <translation>Reinicio requerido</translation>
+        <location filename="../gui/tabs/settings_tab.py" line="381" />
+        <source>Cambio realizado</source>
+        <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="402" />
-        <source>Se han guardado los cambios. Wakka se reiniciará para aplicar el nuevo tema o idioma.
+        <location filename="../gui/tabs/settings_tab.py" line="382" />
+        <source>Para aplicar el nuevo tema o idioma, es necesario reiniciar Wakka.
 
 ¿Deseas reiniciar el programa ahora?</source>
-        <translation>Se han guardado los cambios. Wakka se reiniciará para aplicar el nuevo tema o idioma.
-
-¿Deseas reiniciar el programa ahora?</translation>
+        <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="472" />
+        <location filename="../gui/tabs/settings_tab.py" line="466" />
         <source>[Integrado]</source>
         <translation>[Integrado]</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="473" />
+        <location filename="../gui/tabs/settings_tab.py" line="467" />
         <source>[En Progreso]</source>
         <translation>[En Progreso]</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="474" />
+        <location filename="../gui/tabs/settings_tab.py" line="468" />
         <source>[Binario]</source>
         <translation>[Binario]</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="483" />
+        <location filename="../gui/tabs/settings_tab.py" line="477" />
         <source>Editar en Qt Linguist</source>
         <translation>Editar en Qt Linguist</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="492" />
+        <location filename="../gui/tabs/settings_tab.py" line="486" />
         <source>Eliminar traducción local</source>
         <translation>Eliminar traducción local</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="497" />
+        <location filename="../gui/tabs/settings_tab.py" line="491" />
         <source>[Nativo]</source>
         <translation>[Nativo]</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="497" />
+        <location filename="../gui/tabs/settings_tab.py" line="491" />
         <source>[Sistema]</source>
         <translation>[Sistema]</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="509" />
+        <location filename="../gui/tabs/settings_tab.py" line="503" />
         <source>⛔ Ingresa un código (ej. fr)</source>
         <translation>⛔ Ingresa un código (ej. fr)</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="522" />
+        <location filename="../gui/tabs/settings_tab.py" line="515" />
         <source>✓ Plantilla creada: {0}</source>
         <translation>✓ Plantilla creada: {0}</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="693" />
-        <location filename="../gui/tabs/settings_tab.py" line="527" />
+        <location filename="../gui/tabs/settings_tab.py" line="680" />
+        <location filename="../gui/tabs/settings_tab.py" line="519" />
         <source>Error: {0}</source>
         <translation>Error: {0}</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="530" />
+        <location filename="../gui/tabs/settings_tab.py" line="521" />
         <source>⛔ Falta pylupdate6 (instala python-pyqt6 o pyqt6-tools)</source>
         <translation>⛔ Falta pylupdate6 (instala python-pyqt6 o pyqt6-tools)</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="540" />
+        <location filename="../gui/tabs/settings_tab.py" line="530" />
         <source>⛔ El archivo .ts no existe.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="563" />
+        <location filename="../gui/tabs/settings_tab.py" line="552" />
         <source>✓ Idioma {0} eliminado.</source>
         <translation>✓ Idioma {0} eliminado.</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="566" />
+        <location filename="../gui/tabs/settings_tab.py" line="554" />
         <source>Error borrando: {0}</source>
         <translation>Error borrando: {0}</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="571" />
+        <location filename="../gui/tabs/settings_tab.py" line="558" />
         <source>Importar archivo de traducción</source>
         <translation>Importar archivo de traducción</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="579" />
+        <location filename="../gui/tabs/settings_tab.py" line="566" />
         <source>✓ Importado: {0}</source>
         <translation>✓ Importado: {0}</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="585" />
+        <location filename="../gui/tabs/settings_tab.py" line="571" />
         <source>Error importando: {0}</source>
         <translation>Error importando: {0}</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="593" />
+        <location filename="../gui/tabs/settings_tab.py" line="578" />
         <source>No hay archivos .ts en i18n/</source>
         <translation>No hay archivos .ts en i18n/</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="601" />
+        <location filename="../gui/tabs/settings_tab.py" line="585" />
         <source>✓ {0} idioma(s) compilado(s)</source>
         <translation>✓ {0} idioma(s) compilado(s)</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="605" />
+        <location filename="../gui/tabs/settings_tab.py" line="588" />
         <source>Error compilando: {0}</source>
         <translation>Error compilando: {0}</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="608" />
+        <location filename="../gui/tabs/settings_tab.py" line="590" />
         <source>⛔ Falta lrelease (instala qt6-tools)</source>
         <translation>⛔ Falta lrelease (instala qt6-tools)</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="660" />
-        <location filename="../gui/tabs/settings_tab.py" line="646" />
-        <location filename="../gui/tabs/settings_tab.py" line="636" />
+        <location filename="../gui/tabs/settings_tab.py" line="641" />
+        <location filename="../gui/tabs/settings_tab.py" line="627" />
+        <location filename="../gui/tabs/settings_tab.py" line="617" />
         <source>a las</source>
         <translation>a las</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="645" />
+        <location filename="../gui/tabs/settings_tab.py" line="626" />
         <source>cada</source>
         <translation>cada</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="655" />
+        <location filename="../gui/tabs/settings_tab.py" line="636" />
         <source>día {0}</source>
         <translation>día {0}</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="656" />
+        <location filename="../gui/tabs/settings_tab.py" line="637" />
         <source>Último día del mes</source>
         <translation>Último día del mes</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="659" />
+        <location filename="../gui/tabs/settings_tab.py" line="640" />
         <source>el</source>
         <translation>el</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="689" />
+        <location filename="../gui/tabs/settings_tab.py" line="670" />
         <source>Servicio habilitado ✓</source>
         <translation>Servicio habilitado ✓</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="689" />
+        <location filename="../gui/tabs/settings_tab.py" line="670" />
         <source>Servicio deshabilitado</source>
         <translation>Servicio deshabilitado</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="703" />
+        <location filename="../gui/tabs/settings_tab.py" line="699" />
         <source>Guardado correctamente en pacman.conf ✓</source>
         <translation>Guardado correctamente en pacman.conf ✓</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/settings_tab.py" line="706" />
+        <location filename="../gui/tabs/settings_tab.py" line="701" />
+        <source>Operación cancelada por el usuario.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../gui/tabs/settings_tab.py" line="703" />
+        <source>Error al guardar: {0}</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Aplicar Cambios</source>
+        <translation type="vanished">Aplicar Cambios</translation>
+    </message>
+    <message>
+        <source>Aplica y guarda los cambios de la sección (puede requerir reinicio).</source>
+        <translation type="vanished">Aplica y guarda los cambios de la sección (puede requerir reinicio).</translation>
+    </message>
+    <message>
+        <source>Reinicio requerido</source>
+        <translation type="vanished">Reinicio requerido</translation>
+    </message>
+    <message>
+        <source>Se han guardado los cambios. Wakka se reiniciará para aplicar el nuevo tema o idioma.
+
+¿Deseas reiniciar el programa ahora?</source>
+        <translation type="vanished">Se han guardado los cambios. Wakka se reiniciará para aplicar el nuevo tema o idioma.
+
+¿Deseas reiniciar el programa ahora?</translation>
+    </message>
+    <message>
         <source>Error parcial o total al guardar cambios.</source>
-        <translation>Error parcial o total al guardar cambios.</translation>
+        <translation type="vanished">Error parcial o total al guardar cambios.</translation>
     </message>
     <message>
         <source>📥 Importar</source>
@@ -1163,72 +1308,72 @@ Reinicia Wakka para aplicarlos.</translation>
 </context><context>
     <name>UpdatesTab</name>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="23" />
+        <location filename="../gui/tabs/updates_tab.py" line="24" />
         <source>&lt;h2&gt;Actualizaciones disponibles&lt;/h2&gt;</source>
         <translation>&lt;h2&gt;Actualizaciones disponibles&lt;/h2&gt;</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="25" />
+        <location filename="../gui/tabs/updates_tab.py" line="26" />
         <source>(0 paquetes)</source>
         <translation>(0 paquetes)</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="30" />
+        <location filename="../gui/tabs/updates_tab.py" line="31" />
         <source>Refrescar</source>
         <translation>Refrescar</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="35" />
+        <location filename="../gui/tabs/updates_tab.py" line="36" />
         <source>Actualizar todo</source>
         <translation>Actualizar todo</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="48" />
+        <location filename="../gui/tabs/updates_tab.py" line="49" />
         <source>Actualizar seleccionados</source>
         <translation>Actualizar seleccionados</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="58" />
+        <location filename="../gui/tabs/updates_tab.py" line="59" />
         <source>Nombre</source>
         <translation>Nombre</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="58" />
+        <location filename="../gui/tabs/updates_tab.py" line="59" />
         <source>V. Actual</source>
         <translation>V. Actual</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="58" />
+        <location filename="../gui/tabs/updates_tab.py" line="59" />
         <source>V. Nueva</source>
         <translation>V. Nueva</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="58" />
+        <location filename="../gui/tabs/updates_tab.py" line="59" />
         <source>Acciones</source>
         <translation>Acciones</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="94" />
+        <location filename="../gui/tabs/updates_tab.py" line="95" />
         <source>Desconocida</source>
         <translation>Desconocida</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="108" />
+        <location filename="../gui/tabs/updates_tab.py" line="109" />
         <source>Preguntar a google</source>
         <translation>Preguntar a google</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="112" />
+        <location filename="../gui/tabs/updates_tab.py" line="113" />
         <source>Actualizar</source>
         <translation>Actualizar</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="119" />
+        <location filename="../gui/tabs/updates_tab.py" line="120" />
         <source>({0} paquetes)</source>
         <translation>({0} paquetes)</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="134" />
+        <location filename="../gui/tabs/updates_tab.py" line="135" />
         <source>Actualizar seleccionados ({0})</source>
         <translation>Actualizar seleccionados ({0})</translation>
     </message>
@@ -1272,23 +1417,32 @@ Reinicia Wakka para aplicarlos.</translation>
 </context><context>
     <name>YayWrapper</name>
     <message>
-        <location filename="../core/yay_wrapper.py" line="156" />
-        <source>Actualización disponible</source>
-        <translation>Actualización disponible</translation>
+        <location filename="../core/yay_wrapper.py" line="161" />
+        <source>Actualización disponible (Repo)</source>
+        <translation>Actualización disponible (Repo)</translation>
     </message>
     <message>
-        <location filename="../core/yay_wrapper.py" line="262" />
+        <location filename="../core/yay_wrapper.py" line="178" />
+        <source>Actualización disponible (AUR)</source>
+        <translation>Actualización disponible (AUR)</translation>
+    </message>
+    <message>
+        <location filename="../core/yay_wrapper.py" line="284" />
         <source>Analizando categoría: {0}...</source>
         <translation>Analizando categoría: {0}...</translation>
     </message>
     <message>
-        <location filename="../core/yay_wrapper.py" line="317" />
+        <location filename="../core/yay_wrapper.py" line="343" />
         <source>Caché de AUR limpiada correctamente</source>
         <translation>Caché de AUR limpiada correctamente</translation>
     </message>
     <message>
-        <location filename="../core/yay_wrapper.py" line="325" />
+        <location filename="../core/yay_wrapper.py" line="351" />
         <source>Error al limpiar caché: {0}</source>
         <translation>Error al limpiar caché: {0}</translation>
+    </message>
+    <message>
+        <source>Actualización disponible</source>
+        <translation type="vanished">Actualización disponible</translation>
     </message>
 </context></TS>

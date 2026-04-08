@@ -21,6 +21,9 @@ case "$ACTION" in
     clean)
         /usr/bin/yay -Yc --noconfirm "$@"
         ;;
+    refresh)
+        /usr/bin/yay -Sy --noconfirm
+        ;;
     apply-pacman-conf)
         /usr/bin/cp "$1" /etc/pacman.conf
         ;;

@@ -5,7 +5,7 @@ import re
 import random
 import shutil
 import time
-from typing import List
+from typing import List, Dict
 from dataclasses import dataclass
 import requests
 from bs4 import BeautifulSoup
@@ -142,23 +142,45 @@ class YayWrapper:
 
     def get_available_updates(self) -> List[Package]:
         """Obtiene lista de actualizaciones disponibles"""
-        result = self._run([self.yay_path, "-Qu", "--color", "never"])
-        if not result or not result.stdout:
-            return []
-
         updates = []
-        for line in result.stdout.strip().splitlines():
-            m = re.match(r"(\S+)\s+(\S+)\s+->\s+(\S+)", line)
-            if m:
-                pkg = Package(
-                    name=m.group(1),
-                    version=m.group(3),
-                    description=QCoreApplication.translate("YayWrapper", "Actualización disponible"),
-                    repo="repo",
-                    installed=True,
-                    install_date=m.group(2)
-                )
-                updates.append(pkg)
+        
+        # 1. Repositorios oficiales (usamos checkupdates si está disponible para info fresca sin root)
+        if shutil.which("checkupdates"):
+            res_repo = self._run(["checkupdates", "--nocolor"])
+        else:
+            # Fallback a pacman -Qu (solo verá lo que ya esté sincronizado)
+            res_repo = self._run([self.pacman_path, "-Qu", "--color", "never"])
+            
+        if res_repo and res_repo.stdout:
+            for line in res_repo.stdout.strip().splitlines():
+                m = re.match(r"(\S+)\s+(\S+)\s+->\s+(\S+)", line)
+                if m:
+                    updates.append(Package(
+                        name=m.group(1),
+                        version=m.group(3),
+                        description=QCoreApplication.translate("YayWrapper", "Actualización disponible (Repo)"),
+                        repo="repo",
+                        installed=True,
+                        install_date=m.group(2)
+                    ))
+                    
+        # 2. AUR (yay -Qua solo muestra actualizaciones de AUR)
+        res_aur = self._run([self.yay_path, "-Qua", "--color", "never"])
+        if res_aur and res_aur.stdout:
+            for line in res_aur.stdout.strip().splitlines():
+                m = re.match(r"(\S+)\s+(\S+)\s+->\s+(\S+)", line)
+                if m:
+                    # Evitar duplicados si por alguna razón aparecen en ambos
+                    if not any(p.name == m.group(1) for p in updates):
+                        updates.append(Package(
+                            name=m.group(1),
+                            version=m.group(3),
+                            description=QCoreApplication.translate("YayWrapper", "Actualización disponible (AUR)"),
+                            repo="aur",
+                            installed=True,
+                            install_date=m.group(2)
+                        ))
+                        
         return updates
 
     def search_packages(self, query: str) -> List[Package]:
@@ -279,6 +301,10 @@ class YayWrapper:
                 suggestions_by_category[category] = selected_apps_for_category
 
         return suggestions_by_category
+
+    def refresh_databases(self) -> subprocess.Popen:
+        """Sincroniza las bases de datos de los repositorios (requiere root)"""
+        return subprocess.Popen(["pkexec", "/usr/bin/wakka-helper", "refresh"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
     def install(self, packages: List[str]) -> subprocess.Popen:
         """Instala paquetes (retorna proceso para terminal)"""

@@ -8,6 +8,7 @@ class UpdatesTab(QWidget):
     install_selected = pyqtSignal(list)  # Lista de nombres de paquetes
     install_all = pyqtSignal()
     show_info = pyqtSignal(str, str)
+    refresh_requested = pyqtSignal()
 
     def __init__(self, yay_wrapper, parent=None):
         super().__init__(parent)
@@ -29,7 +30,7 @@ class UpdatesTab(QWidget):
         # Botones
         self.btn_refresh = QPushButton(self.tr("Refrescar"))
         self.btn_refresh.setIcon(QIcon.fromTheme("view-refresh"))
-        self.btn_refresh.clicked.connect(self.load_updates)
+        self.btn_refresh.clicked.connect(self.refresh_requested.emit)
         header.addWidget(self.btn_refresh)
 
         self.btn_update_all = QPushButton(self.tr("Actualizar todo"))

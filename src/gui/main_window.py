@@ -55,6 +55,7 @@ class MainWindow(QMainWindow):
         self.updates_tab.install_selected.connect(self.install_packages)
         self.updates_tab.install_all.connect(self.update_all)
         self.updates_tab.show_info.connect(self.show_package_info)
+        self.updates_tab.refresh_requested.connect(self.run_full_refresh)
         self.tabs.addTab(self.updates_tab, self.tr("⬆️ Actualizaciones"))
 
         # Tab 3: Buscar
@@ -231,6 +232,14 @@ class MainWindow(QMainWindow):
     def update_all(self):
         dialog = TerminalDialog(self.tr("Actualizando sistema completo"), parent=self)
         process = self.yay.update_system()
+        dialog.process = process
+        dialog.setup_worker()
+        dialog.exec()
+        self.refresh_all()
+
+    def run_full_refresh(self):
+        dialog = TerminalDialog(self.tr("Sincronizando bases de datos"), parent=self)
+        process = self.yay.refresh_databases()
         dialog.process = process
         dialog.setup_worker()
         dialog.exec()

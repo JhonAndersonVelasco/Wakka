@@ -58,17 +58,26 @@ def main():
     # Intentar cargar desde el tema del sistema primero
     icon = QIcon.fromTheme("wakka")
 
-    # Fallback a la ruta de instalación local si no está en el tema todavía
+    # Fallbacks si no está cargado
     if icon.isNull():
-        fallback_path = "/usr/share/icons/hicolor/scalable/apps/wakka.svg"
-        if os.path.exists(fallback_path):
-            icon = QIcon(fallback_path)
-        else:
+        candidates = [
+            "/usr/share/icons/hicolor/scalable/apps/wakka.svg",
+            os.path.join(os.path.dirname(__file__), "..", "resources", "wakka.svg"),
+            os.path.join(os.getcwd(), "resources", "wakka.svg")
+        ]
+        for path in candidates:
+            if os.path.exists(path):
+                icon = QIcon(path)
+                break
+        
+        if icon.isNull():
             icon = QIcon.fromTheme("package-manager")
 
     # Aplicar Tema
     config = ConfigManager()
     apply_theme(app, config.get("theme", "system"))
+
+    app.setWindowIcon(icon)
 
     window = MainWindow()
     

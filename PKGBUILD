@@ -13,7 +13,8 @@ depends=('python-pyqt6'
          'python-beautifulsoup4' 
          'python-lxml' 
          'yay' 
-         'polkit')
+         'polkit' 
+         'pacman-contrib')
 makedepends=()
 source=("wakka"
         "wakka.desktop")
