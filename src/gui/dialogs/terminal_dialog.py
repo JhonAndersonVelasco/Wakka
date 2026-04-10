@@ -1,9 +1,7 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit,
                              QPushButton, QLabel, QProgressBar)
-from PyQt6.QtCore import QThread, pyqtSignal, Qt
+from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtGui import QTextCursor, QColor
-import subprocess
-import os
 
 class WorkerThread(QThread):
     output_ready = pyqtSignal(str)
