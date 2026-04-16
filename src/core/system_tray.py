@@ -5,6 +5,27 @@ from PyQt6.QtWidgets import QSystemTrayIcon, QMenu
 from PyQt6.QtGui import QIcon, QColor, QPixmap, QPainter, QAction, QFont
 from PyQt6.QtCore import Qt, pyqtSignal, QObject, QRect, QTimer
 
+
+def load_app_icon() -> QIcon:
+    icon = QIcon.fromTheme("wakka")
+
+    if icon.isNull():
+        candidates = [
+            "/usr/share/icons/hicolor/scalable/apps/wakka.svg",
+            os.path.join(os.path.dirname(__file__), "..", "resources", "wakka.svg"),
+            os.path.join(os.getcwd(), "src", "resources", "wakka.svg"),
+            os.path.join(os.getcwd(), "resources", "wakka.svg"),
+        ]
+        for path in candidates:
+            if os.path.exists(path):
+                icon = QIcon(path)
+                break
+
+        if icon.isNull():
+            icon = QIcon.fromTheme("package-manager")
+
+    return icon
+
 class TrayIcon(QObject):
     show_window = pyqtSignal()
     quit_app = pyqtSignal()
@@ -66,21 +87,7 @@ class TrayIcon(QObject):
 
     def update_icon(self):
         """Genera icono con badge de notificación sobre el logo de Wakka"""
-        icon = QIcon.fromTheme("wakka")
-
-        if icon.isNull():
-            candidates = [
-                "/usr/share/icons/hicolor/scalable/apps/wakka.svg",
-                os.path.join(os.path.dirname(__file__), "..", "..", "resources", "wakka.svg"),
-                os.path.join(os.getcwd(), "resources", "wakka.svg")
-            ]
-            for path in candidates:
-                if os.path.exists(path):
-                    icon = QIcon(path)
-                    break
-            
-            if icon.isNull():
-                icon = QIcon.fromTheme("package-manager")
+        icon = load_app_icon()
 
         if self.update_count > 0:
             pixmap = icon.pixmap(48, 48)
@@ -106,7 +113,7 @@ class TrayIcon(QObject):
             self.tray.setToolTip(self.tr("Wakka - Gestor de paquetes"))
 
     def show_notification(self, title: str, message: str):
-        self.tray.showMessage(title, message, QSystemTrayIcon.MessageIcon.Information, 5000)
+        self.tray.showMessage(title, message, QSystemTrayIcon.MessageIcon.NoIcon, 5000)
 
     def on_activated(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
@@ -159,13 +166,14 @@ class TrayIcon(QObject):
             target_h = sched.get("hour", 12)
             
             is_target_day = False
-            if target_day_str == "Último día del mes":
+            if target_day_str == "last" or target_day_str == "Último día del mes":
                 last_day = calendar.monthrange(now.year, now.month)[1]
                 if now.day == last_day:
                     is_target_day = True
             else:
                 try:
-                    num = int(target_day_str.replace("día ", ""))
+                    normalized_day = target_day_str.replace("día ", "")
+                    num = int(normalized_day)
                     if now.day == num:
                         is_target_day = True
                 except ValueError:

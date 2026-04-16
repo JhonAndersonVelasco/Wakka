@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Wakka</vendor>
+  <vendor_url>https://github.com/wakka</vendor_url>
+
+  <action id="com.wakka.service-manager">
+    <description>Wakka - Service configuration</description>
+    <description xml:lang="es">Wakka - Configuración de servicios</description>
+    <description xml:lang="en">Wakka - Service configuration</description>
+    <description xml:lang="fr">Wakka - Configuration des services</description>
+    <description xml:lang="pt">Wakka - Configuração de serviços</description>
+    <description xml:lang="de">Wakka - Dienstkonfiguration</description>
+    <description xml:lang="ru">Wakka - Настройка служб</description>
+    <description xml:lang="zh">Wakka - 服务配置</description>
+    <description xml:lang="ar">Wakka - إعداد الخدمات</description>
+    <message>Authentication is required to configure update-on-shutdown</message>
+    <message xml:lang="es">Se requiere autenticacion para configurar la actualizacion al apagar</message>
+    <message xml:lang="en">Authentication is required to configure update-on-shutdown</message>
+    <message xml:lang="fr">Une authentification est requise pour configurer la mise a jour a l extinction</message>
+    <message xml:lang="pt">É necessária autenticação para configurar a atualização ao desligar</message>
+    <message xml:lang="de">Authentifizierung ist erforderlich, um die Aktualisierung beim Herunterfahren zu konfigurieren</message>
+    <message xml:lang="ru">Требуется аутентификация для настройки обновления при выключении</message>
+    <message xml:lang="zh">需要身份验证才能配置关机时更新</message>
+    <message xml:lang="ar">المصادقة مطلوبة لإعداد التحديث عند إيقاف التشغيل</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/wakka-service-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">set-shutdown-service</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>

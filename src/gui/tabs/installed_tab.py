@@ -205,3 +205,6 @@ class InstalledTab(QWidget):
         )
         if reply == QMessageBox.StandardButton.Yes:
             self.remove_package.emit(package_name)
+
+    def refresh_view(self):
+        self.load_packages()

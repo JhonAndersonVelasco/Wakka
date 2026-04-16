@@ -1,0 +1,24 @@
+#!/bin/bash
+# Wakka service helper
+# Gestiona servicios auxiliares de systemd para Wakka.
+
+set -euo pipefail
+
+ACTION="${1:-}"
+shift || true
+
+case "$ACTION" in
+    set-shutdown-service)
+        MODE="${1:-}"
+        if [[ "$MODE" != "enable" && "$MODE" != "disable" ]]; then
+            echo "Modo no válido: $MODE"
+            exit 1
+        fi
+        /usr/bin/systemctl daemon-reload
+        exec /usr/bin/systemctl "$MODE" wakka-shutdown.service
+        ;;
+    *)
+        echo "Acción no válida: $ACTION"
+        exit 1
+        ;;
+esac

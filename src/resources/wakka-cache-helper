@@ -1,0 +1,42 @@
+#!/bin/bash
+# Wakka Cache Helper
+# Este script es llamado por pkexec para ejecutar limpiezas del sistema.
+
+ACTION="$1"
+shift
+
+find_paccache() {
+    command -v paccache 2>/dev/null || true
+}
+
+case "$ACTION" in
+    clean-pacman-cache)
+        PACCACHE_BIN="$(find_paccache)"
+        if [ -z "$PACCACHE_BIN" ]; then
+            echo "paccache no está instalado (instala pacman-contrib)"
+            exit 1
+        fi
+        KEEP="${1:-2}"
+        exec "$PACCACHE_BIN" -r "-k${KEEP}"
+        ;;
+    clean-pacman-uninstalled)
+        PACCACHE_BIN="$(find_paccache)"
+        if [ -z "$PACCACHE_BIN" ]; then
+            echo "paccache no está instalado (instala pacman-contrib)"
+            exit 1
+        fi
+        exec "$PACCACHE_BIN" -ruk0
+        ;;
+    clean-orphans)
+        ORPHANS="$(/usr/bin/pacman -Qdtq)"
+        if [ -z "$ORPHANS" ]; then
+            echo "No hay paquetes huérfanos."
+            exit 0
+        fi
+        exec /usr/bin/pacman -Rns --noconfirm $ORPHANS
+        ;;
+    *)
+        echo "Acción no válida: $ACTION"
+        exit 1
+        ;;
+esac

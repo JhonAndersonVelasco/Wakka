@@ -166,3 +166,7 @@ class SearchTab(QWidget):
         )
         if file_path:
             self.install_local.emit(file_path)
+
+    def refresh_view(self):
+        if self.search_input.text().strip():
+            self.do_search()

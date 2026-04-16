@@ -56,7 +56,7 @@ class CacheManager(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._paccache = shutil.which("paccache")
+        self._cache_helper = "/usr/bin/wakka-cache-helper"
 
     def get_cache_info(self):
         self.cache_info_ready.emit(CacheInfo())
@@ -65,20 +65,14 @@ class CacheManager(QObject):
         return CacheInfo()
 
     def clean_pacman_cache(self, keep: int = 2) -> subprocess.Popen:
-        if not self._paccache:
-            return subprocess.Popen(["echo", "paccache no está instalado (instala pacman-contrib)"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        
         return subprocess.Popen(
-            ["pkexec", self._paccache, "-r", f"-k{keep}"],
+            ["pkexec", self._cache_helper, "clean-pacman-cache", str(keep)],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
         )
 
     def clean_pacman_uninstalled(self) -> subprocess.Popen:
-        if not self._paccache:
-            return subprocess.Popen(["echo", "paccache no está instalado (instala pacman-contrib)"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        
         return subprocess.Popen(
-            ["pkexec", self._paccache, "-ruk0"],
+            ["pkexec", self._cache_helper, "clean-pacman-uninstalled"],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
         )
 
@@ -91,15 +85,7 @@ class CacheManager(QObject):
             return subprocess.Popen(["echo", f"Error limpiando caché de AUR: {e}"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
     def clean_orphans(self) -> subprocess.Popen:
-        try:
-            result = subprocess.run(
-                ["pacman", "-Qdtq"], capture_output=True, text=True
-            )
-            orphans = result.stdout.strip().split()
-            if not orphans:
-                return subprocess.Popen(["echo", "No hay paquetes huérfanos."], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-                
-            cmd = ["pkexec", "pacman", "-Rns", "--noconfirm"] + orphans
-            return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        except Exception as e:
-            return subprocess.Popen(["echo", f"Error obteniendo huérfanos: {e}"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        return subprocess.Popen(
+            ["pkexec", self._cache_helper, "clean-orphans"],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        )

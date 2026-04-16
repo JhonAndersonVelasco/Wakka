@@ -1,6 +1,8 @@
-from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit,
-                             QPushButton, QLabel, QProgressBar)
-from PyQt6.QtCore import QThread, pyqtSignal
+import os
+from PyQt6.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QProgressBar, QMessageBox
+    )
+from PyQt6.QtCore import QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QTextCursor, QColor
 
 class WorkerThread(QThread):
@@ -13,12 +15,17 @@ class WorkerThread(QThread):
 
     def run(self):
         # Leer el stream de salida línea a línea de forma eficiente
+        if not self.process:
+            return
+
         try:
             for line in iter(self.process.stdout.readline, ''):
                 if line:
                     self.output_ready.emit(line.strip())
         finally:
-            self.process.wait()
+            # Solo esperar si el proceso existe y no ha terminado ya
+            if self.process and self.process.poll() is None:
+                self.process.wait()
         self.finished_work.emit(self.process.returncode)
 
 class TerminalDialog(QDialog):
@@ -28,10 +35,28 @@ class TerminalDialog(QDialog):
         self.setModal(True)
         self.setMinimumSize(800, 600)
         self.process = process
+        self.operation_succeeded = False
         self.setup_ui()
 
-        if process:
-            self.setup_worker()
+        # Check for pacman lock file before starting the worker thread
+        lock_file = "/var/lib/pacman/db.lck"
+        if os.path.exists(lock_file):
+            reply = QMessageBox.question(self, self.tr("Wakka"), 
+                self.tr("Se ha detectado el archivo de bloqueo de Pacman: {0}\n¿Desea eliminarlo para liberar la gestión de paquetes?").format(os.path.basename(lock_file)),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
+                QMessageBox.StandardButton.No)
+
+            if reply == QMessageBox.StandardButton.Yes:
+                try:
+                    os.remove(lock_file)
+                    self.append_output(self.tr("✅ Archivo de bloqueo {0} eliminado exitosamente.").format(os.path.basename(lock_file)))
+                except OSError as e:
+                    self.append_output(self.tr("❌ Error al eliminar el archivo {0}: {1}").format(os.path.basename(lock_file), e))
+            else:
+                # Si el usuario dice no, simplemente continuamos con la operación original sin modificar nada en el terminal
+                pass 
+
+        self.setup_worker()
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
@@ -86,13 +111,16 @@ class TerminalDialog(QDialog):
         layout.addLayout(btn_layout)
 
     def setup_worker(self):
-        self.worker = WorkerThread(self.process)
-        self.worker.output_ready.connect(self.append_output)
-        self.worker.finished_work.connect(self.on_finished)
-        self.worker.start()
+        if self.process:
+            self.worker = WorkerThread(self.process)
+            self.worker.output_ready.connect(self.append_output)
+            self.worker.finished_work.connect(self.on_finished)
+            self.worker.start()
 
     def append_output(self, text):
-        self.terminal.moveCursor(QTextCursor.MoveOperation.End)
+        # Only move cursor if terminal already has content to avoid UI freeze on empty QTextEdit
+        if self.terminal.toPlainText():
+            self.terminal.moveCursor(QTextCursor.MoveOperation.End)
 
         # Colorear según el tipo de mensaje
         if "error" in text.lower() or "failed" in text.lower():
@@ -106,22 +134,27 @@ class TerminalDialog(QDialog):
 
         self.terminal.insertPlainText(text + "\n")
         self.terminal.ensureCursorVisible()
-
+        
     def on_finished(self, return_code):
+        # 1. Actualizar la UI para reflejar el estado final
         self.progress.setRange(0, 100)
         self.progress.setValue(100)
+        self.operation_succeeded = return_code == 0
 
         if return_code == 0:
             self.append_output(self.tr("\n✅ Operación completada exitosamente"))
+            QTimer.singleShot(1000, self.accept)
         else:
             self.append_output(self.tr("\n❌ Operación fallida (código {0})").format(return_code))
 
+        # 2. Deshabilitar botones de acción y habilitar el botón de cerrar (si no se cerró ya)
         self.cancel_btn.setEnabled(False)
         self.close_btn.setEnabled(True)
-
+    
     def cancel_operation(self):
         if self.process and self.process.poll() is None:
             self.process.terminate()
+            self.operation_succeeded = False
             self.append_output(self.tr("\n⚠️ Operación cancelada por el usuario"))
             self.cancel_btn.setEnabled(False)
             self.close_btn.setEnabled(True)

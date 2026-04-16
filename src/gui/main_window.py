@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
 
         self.setup_ui()
         self.setup_tray()
-
+        self._sync_tray_with_updates_tab()
         self.check_initial_updates()
 
     def setup_ui(self):
@@ -82,7 +82,6 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.settings_tab, self.tr("⚙️ Configuración"))
 
         layout.addWidget(self.tabs)
-        self.refresh_cache_info()
 
         # Status bar
         self.statusBar().showMessage(self.tr("Listo"))
@@ -103,104 +102,122 @@ class MainWindow(QMainWindow):
             self.refresh_cache_info()
 
     def install_package(self, package_name):
-        dialog = TerminalDialog(self.tr("Instalando {0}").format(package_name), parent=self)
         process = self.yay.install([package_name])
-        dialog.process = process
-        dialog.setup_worker()
-        dialog.exec()
-        self.refresh_all()
+        self._run_terminal_operation(
+            self.tr("Instalando {0}").format(package_name),
+            process,
+            self._refresh_after_package_change,
+        )
 
     def install_packages(self, packages):
-        dialog = TerminalDialog(self.tr("Instalando {0} paquetes").format(len(packages)), parent=self)
         process = self.yay.install(packages)
-        dialog.process = process
-        dialog.setup_worker()
-        dialog.exec()
-        self.refresh_all()
+        self._run_terminal_operation(
+            self.tr("Instalando {0} paquetes").format(len(packages)),
+            process,
+            self._refresh_after_package_change,
+        )
 
     def install_local_package(self, file_path):
-        dialog = TerminalDialog(self.tr("Instalando {0}").format(file_path), parent=self)
         process = self.yay.install_local_package(file_path)
-        dialog.process = process
-        dialog.setup_worker()
-        dialog.exec()
+        self._run_terminal_operation(
+            self.tr("Instalando {0}").format(file_path),
+            process,
+            self._refresh_after_package_change,
+        )
 
     def remove_package(self, package_name):
-        dialog = TerminalDialog(self.tr("Desinstalando {0}").format(package_name), parent=self)
         process = self.yay.remove([package_name])
-        dialog.process = process
-        dialog.setup_worker()
-        dialog.exec()
-        self.refresh_all()
+        self._run_terminal_operation(
+            self.tr("Desinstalando {0}").format(package_name),
+            process,
+            self._refresh_after_package_change,
+        )
 
     def remove_packages(self, packages):
-        dialog = TerminalDialog(self.tr("Desinstalando {0} paquetes").format(len(packages)), parent=self)
         process = self.yay.remove(packages)
-        dialog.process = process
-        dialog.setup_worker()
-        dialog.exec()
-        self.refresh_all()
+        self._run_terminal_operation(
+            self.tr("Desinstalando {0} paquetes").format(len(packages)),
+            process,
+            self._refresh_after_package_change,
+        )
 
     def update_all(self):
-        dialog = TerminalDialog(self.tr("Actualizando sistema completo"), parent=self)
         process = self.yay.update_system()
-        dialog.process = process
-        dialog.setup_worker()
-        dialog.exec()
-        self.refresh_all()
+        self._run_terminal_operation(
+            self.tr("Actualizando sistema completo"),
+            process,
+            self._refresh_after_package_change,
+        )
 
     def run_full_refresh(self):
-        dialog = TerminalDialog(self.tr("Sincronizando bases de datos"), parent=self)
         process = self.yay.refresh_databases()
-        dialog.process = process
-        dialog.setup_worker()
-        dialog.exec()
-        self.refresh_all()
+        self._run_terminal_operation(
+            self.tr("Sincronizando bases de datos"),
+            process,
+            self._refresh_updates_state,
+        )
 
     def show_package_info(self, name, description):
         self.google.explain_package(name, description)
 
     def run_clean_pacman(self, keep):
-        dialog = TerminalDialog(self.tr("Limpiando caché de Pacman"), parent=self)
         process = self.cache_mgr.clean_pacman_cache(keep)
-        dialog.process = process
-        dialog.setup_worker()
-        dialog.exec()
-        self.refresh_cache_info()
+        self._run_terminal_operation(
+            self.tr("Limpiando caché de Pacman"),
+            process,
+            self.cache_tab.refresh_view,
+        )
 
     def run_clean_pacman_uninstalled(self):
-        dialog = TerminalDialog(self.tr("Limpiando caché de paquetes desinstalados"), parent=self)
         process = self.cache_mgr.clean_pacman_uninstalled()
-        dialog.process = process
-        dialog.setup_worker()
-        dialog.exec()
-        self.refresh_cache_info()
+        self._run_terminal_operation(
+            self.tr("Limpiando caché de paquetes desinstalados"),
+            process,
+            self.cache_tab.refresh_view,
+        )
 
     def run_clean_yay(self):
-        dialog = TerminalDialog(self.tr("Limpiando caché de AUR"), parent=self)
         process = self.cache_mgr.clean_yay_cache()
-        dialog.process = process
-        dialog.setup_worker()
-        dialog.exec()
-        self.refresh_cache_info()
+        self._run_terminal_operation(
+            self.tr("Limpiando caché de AUR"),
+            process,
+            self.cache_tab.refresh_view,
+        )
 
     def run_clean_orphans(self):
-        dialog = TerminalDialog(self.tr("Eliminando paquetes huérfanos"), parent=self)
         process = self.cache_mgr.clean_orphans()
-        dialog.process = process
-        dialog.setup_worker()
-        dialog.exec()
-        self.refresh_cache_info()
+        self._run_terminal_operation(
+            self.tr("Eliminando paquetes huérfanos"),
+            process,
+            self.cache_tab.refresh_view,
+        )
+
+    def _run_terminal_operation(self, description, process, on_success=None):
+        dialog = TerminalDialog(description, process=process, parent=self)
+        if dialog.exec() and dialog.operation_succeeded and on_success:
+            on_success()
+
+    def _refresh_after_package_change(self):
+        self._refresh_updates_state()
+        self.installed_tab.refresh_view()
+        self.suggestions_tab.refresh_view()
+        self.search_tab.refresh_view()
+        self.cache_tab.refresh_view()
+
+    def _refresh_updates_state(self):
+        self.updates_tab.refresh_view()
+        self._sync_tray_with_updates_tab()
+
+    def _sync_tray_with_updates_tab(self):
+        self.tray.set_update_count(self.updates_tab.get_update_count())
 
     def refresh_cache_info(self):
         info = self.cache_mgr.get_cache_info_sync()
         self.cache_tab.update_cache_info(info)
 
     def refresh_all(self):
-        self.updates_tab.load_updates()
-        self.installed_tab.load_packages()
-        self.suggestions_tab.load_suggestions()
-        self.tray.check_updates_silent()
+        """Actualiza todos los tabs con opcional de yield entre operaciones para UI responsive."""
+        self._refresh_after_package_change()
 
     def quit_application(self):
         self.tray.tray.hide()

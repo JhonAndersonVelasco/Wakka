@@ -333,7 +333,7 @@ StartupNotify=false
 
     def set_shutdown_updates(self, enabled: bool) -> tuple[bool, str]:
         action = "enable" if enabled else "disable"
-        ok, msg = self._run_privileged(["/usr/bin/wakka-helper", "set-shutdown-service", action], timeout=15)
+        ok, msg = self._run_privileged(["/usr/bin/wakka-service-helper", "set-shutdown-service", action], timeout=15)
         if ok:
             self.set("shutdown_updates", enabled)
         return ok, msg

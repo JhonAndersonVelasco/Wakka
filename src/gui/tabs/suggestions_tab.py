@@ -196,3 +196,6 @@ class SuggestionsTab(QWidget):
 
         # Add a stretch at the end to push content to the top
         self.main_vbox_layout.addStretch(1)
+
+    def refresh_view(self):
+        self.load_suggestions()

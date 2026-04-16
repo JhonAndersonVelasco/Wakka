@@ -1,4 +1,0 @@
-PyQt6>=6.4.0
-requests>=2.28.0
-
-# Puedes revisar todo este proyecto en busca de errores, inconsistencias, código muerto, redundancias y malas prácticas?

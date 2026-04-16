@@ -161,7 +161,11 @@ class SettingsTab(QWidget):
         uf.addRow(self._notif_chk)
 
         self._shutdown_chk = QCheckBox(self.tr("Instalar al apagar el equipo"))
-        self._shutdown_chk.setToolTip(self.tr("Requiere habilitar el servicio systemd wakka-shutdown.service"))
+        self._shutdown_chk.setToolTip(
+            self.tr("Requiere habilitar el servicio systemd wakka-shutdown.service. "
+                    "Wakka intentará actualizar paquetes oficiales y AUR al apagar; "
+                    "si yay no puede ejecutarse sin interacción, hará fallback a paquetes oficiales.")
+        )
         self._shutdown_chk.stateChanged.connect(self._on_shutdown_updates)
         self._shutd_status = QLabel("")
         self._shutd_status.setStyleSheet(style_subtitle(11))
@@ -176,8 +180,9 @@ class SettingsTab(QWidget):
         self._update_freq = QComboBox()
         self._update_freq.setView(QListView())
         self._update_freq.addItems([
-            self.tr("Al iniciar"), self.tr("Cada hora"), self.tr("Diariamente"), 
-            self.tr("Semanalmente"), self.tr("Mensualmente"), self.tr("Manualmente")
+            self.tr("Al iniciar"), self.tr("Cada 6 horas"), self.tr("Cada 12 horas"),
+            self.tr("Diariamente"), self.tr("Semanalmente"), self.tr("Mensualmente"),
+            self.tr("Manualmente")
         ])
         self._update_freq.setToolTip(self.tr("Frecuencia con la que se revisan automáticamente las actualizaciones."))
         self._update_freq.currentIndexChanged.connect(self._on_schedule_changed)
@@ -213,7 +218,6 @@ class SettingsTab(QWidget):
 
         uf.addRow(self.tr("Buscar actualizaciones:"), search_row)
 
-        self._sched_hourly_combo.currentIndexChanged.connect(self._save_schedule_state)
         self._sched_hour.valueChanged.connect(self._save_schedule_state)
         self._sched_day.currentIndexChanged.connect(self._save_schedule_state)
 
@@ -297,14 +301,13 @@ class SettingsTab(QWidget):
         self._notif_chk.blockSignals(False)
 
         self._update_freq.blockSignals(True)
-        policy = self._config.get("update_policy", "boot")
-        idx_map = {"boot": 0, "hourly": 1, "daily": 2, "weekly": 3, "monthly": 4, "manual": 5}
-        self._update_freq.setCurrentIndex(idx_map.get(policy, 0))
+        policy = self._get_update_policy()
+        self._update_freq.setCurrentIndex(self._update_policy_to_index(policy))
         self._update_freq.blockSignals(False)
 
         self._update_schedule_ui_only(policy)
 
-        sched = self._config.get("schedule", {})
+        sched = self._config.get("update_schedule", {})
         self._sched_hourly_combo.blockSignals(True)
         idx = 0
         if sched.get("interval_hours", 6) == 12:
@@ -318,7 +321,10 @@ class SettingsTab(QWidget):
         }
         saved_day = sched.get("day", "saturday")
         self._sched_day.blockSignals(True)
-        self._sched_day.setCurrentIndex(day_map.get(saved_day, 5) if isinstance(saved_day, str) else saved_day)
+        if policy == "monthly":
+            self._sched_day.setCurrentIndex(self._month_day_to_index(saved_day))
+        else:
+            self._sched_day.setCurrentIndex(day_map.get(saved_day, 5) if isinstance(saved_day, str) else saved_day)
         self._sched_day.blockSignals(False)
 
         self._sched_hour.blockSignals(True)
@@ -593,8 +599,7 @@ class SettingsTab(QWidget):
 
     def _on_schedule_changed(self):
         idx = self._update_freq.currentIndex()
-        policies = ["boot", "hourly", "daily", "weekly", "monthly", "manual"]
-        policy = policies[idx] if idx < len(policies) else "boot"
+        policy = self._index_to_update_policy(idx)
 
         self._config.set("update_policy", policy)
         self._config.set("check_updates_on_start", policy == "boot")
@@ -611,9 +616,7 @@ class SettingsTab(QWidget):
         self._sched_day.hide()
         self._sched_hour.hide()
 
-        if policy == "hourly":
-            self._sched_hourly_combo.show()
-        elif policy == "daily":
+        if policy == "daily":
             self._sched_lbl_pre.setText(self.tr("a las"))
             self._sched_lbl_pre.show()
             self._sched_hour.show()
@@ -646,22 +649,100 @@ class SettingsTab(QWidget):
 
     def _save_schedule_state(self):
         idx = self._update_freq.currentIndex()
-        policies = ["boot", "hourly", "daily", "weekly", "monthly", "manual"]
-        policy = policies[idx] if idx < len(policies) else "boot"
+        policy = self._index_to_update_policy(idx)
 
         day_keys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
         day_idx = self._sched_day.currentIndex()
         day_str = day_keys[day_idx] if 0 <= day_idx < len(day_keys) else "saturday"
+        if policy == "monthly":
+            day_str = self._month_day_from_index(day_idx)
+
+        interval_hours = 6
+        frequency = policy
+        if policy == "every_6_hours":
+            frequency = "hourly"
+            interval_hours = 6
+        elif policy == "every_12_hours":
+            frequency = "hourly"
+            interval_hours = 12
 
         sched = {
             "enabled": policy not in ["boot", "manual"],
-            "frequency": policy,
-            "interval_hours": 6 if self._sched_hourly_combo.currentIndex() == 0 else 12,
+            "frequency": frequency,
+            "interval_hours": interval_hours,
             "day": day_str,
             "hour": self._sched_hour.value()
         }
-        self._config.set("schedule", sched)
+        self._config.set("update_schedule", sched)
         self.schedule_changed.emit(sched["enabled"], sched)
+
+    def _get_update_policy(self) -> str:
+        policy = self._config.get("update_policy")
+        if policy in {"boot", "every_6_hours", "every_12_hours", "daily", "weekly", "monthly", "manual"}:
+            return policy
+        if policy == "hourly":
+            sched = self._config.get("update_schedule", {})
+            return "every_12_hours" if sched.get("interval_hours", 6) == 12 else "every_6_hours"
+
+        if self._config.get("check_updates_on_start", True):
+            return "boot"
+
+        sched = self._config.get("update_schedule", {})
+        if not sched.get("enabled", False):
+            return "manual"
+
+        if sched.get("frequency") == "hourly":
+            return "every_12_hours" if sched.get("interval_hours", 6) == 12 else "every_6_hours"
+
+        return sched.get("frequency", "daily")
+
+    def _index_to_update_policy(self, idx: int) -> str:
+        policies = [
+            "boot",
+            "every_6_hours",
+            "every_12_hours",
+            "daily",
+            "weekly",
+            "monthly",
+            "manual",
+        ]
+        return policies[idx] if 0 <= idx < len(policies) else "boot"
+
+    def _update_policy_to_index(self, policy: str) -> int:
+        idx_map = {
+            "boot": 0,
+            "every_6_hours": 1,
+            "every_12_hours": 2,
+            "daily": 3,
+            "weekly": 4,
+            "monthly": 5,
+            "manual": 6,
+        }
+        return idx_map.get(policy, 0)
+
+    def _month_day_from_index(self, idx: int) -> str:
+        if idx < 0:
+            return "1"
+        if idx >= 27:
+            return "last"
+        return str(idx + 1)
+
+    def _month_day_to_index(self, day_value) -> int:
+        if isinstance(day_value, int):
+            return min(max(day_value - 1, 0), 27)
+        if isinstance(day_value, str):
+            if day_value == "last":
+                return 27
+            if day_value.isdigit():
+                return min(max(int(day_value) - 1, 0), 27)
+            if day_value == "Último día del mes":
+                return 27
+            if day_value.startswith("día "):
+                try:
+                    return min(max(int(day_value.replace("día ", "")) - 1, 0), 27)
+                except ValueError:
+                    return 0
+        return 0
 
     def _on_shutdown_updates(self, state: int):
         enabled = state == Qt.CheckState.Checked.value

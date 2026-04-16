@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Wakka</vendor>
+  <vendor_url>https://github.com/wakka</vendor_url>
+
+  <action id="com.wakka.package-manager">
+    <description>Wakka - Package manager</description>
+    <description xml:lang="es">Wakka - Gestor de paquetes</description>
+    <description xml:lang="en">Wakka - Package manager</description>
+    <description xml:lang="fr">Wakka - Gestionnaire de paquets</description>
+    <description xml:lang="pt">Wakka - Gestor de pacotes</description>
+    <description xml:lang="de">Wakka - Paketverwaltung</description>
+    <description xml:lang="ru">Wakka - Менеджер пакетов</description>
+    <description xml:lang="zh">Wakka - 软件包管理器</description>
+    <description xml:lang="ar">Wakka - مدير الحزم</description>
+    <message>Authentication is required to manage packages</message>
+    <message xml:lang="es">Se requiere autenticacion para gestionar paquetes</message>
+    <message xml:lang="en">Authentication is required to manage packages</message>
+    <message xml:lang="fr">Une authentification est requise pour gérer les paquets</message>
+    <message xml:lang="pt">É necessária autenticação para gerir pacotes</message>
+    <message xml:lang="de">Authentifizierung ist erforderlich, um Pakete zu verwalten</message>
+    <message xml:lang="ru">Требуется аутентификация для управления пакетами</message>
+    <message xml:lang="zh">需要身份验证才能管理软件包</message>
+    <message xml:lang="ar">المصادقة مطلوبة لإدارة الحزم</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/wakka-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>

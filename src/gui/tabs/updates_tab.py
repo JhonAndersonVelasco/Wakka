@@ -147,3 +147,6 @@ class UpdatesTab(QWidget):
 
     def get_update_count(self):
         return len(self.packages)
+
+    def refresh_view(self):
+        self.load_updates()

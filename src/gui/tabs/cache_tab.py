@@ -94,7 +94,7 @@ class CacheTab(QWidget):
         refresh_btn = QPushButton(self.tr("Refrescar"))
         refresh_btn.setIcon(QIcon.fromTheme("view-refresh"))
         refresh_btn.setToolTip(self.tr("Actualizar tamaños de almacenamiento"))
-        refresh_btn.clicked.connect(self.refresh_requested)
+        refresh_btn.clicked.connect(self.refresh_requested.emit)
         total_row.addWidget(refresh_btn)
         ov_layout.addLayout(total_row)
 
@@ -194,7 +194,7 @@ class CacheTab(QWidget):
 
         clean_uninst_btn = QPushButton(self.tr("🗑 Eliminar caché de desinstalados"))
         clean_uninst_btn.setToolTip(self.tr("Elimina la caché estricta de todos los programas que ya no tienes en tu sistema."))
-        clean_uninst_btn.clicked.connect(self.clean_pacman_uninstalled)
+        clean_uninst_btn.clicked.connect(self.clean_pacman_uninstalled.emit)
 
         pg_layout.addLayout(keep_row)
         pg_layout.addWidget(clean_pacman_btn)
@@ -205,7 +205,7 @@ class CacheTab(QWidget):
 
         clean_aur_btn = QPushButton(self.tr("🧹 Limpiar caché AUR"))
         clean_aur_btn.setToolTip(self.tr("Elimina los directorios de compilación de yay en ~/.cache/yay/"))
-        clean_aur_btn.clicked.connect(self.clean_yay_requested)
+        clean_aur_btn.clicked.connect(self.clean_yay_requested.emit)
 
         ag_layout.addWidget(clean_aur_btn)
 
@@ -215,7 +215,7 @@ class CacheTab(QWidget):
         clean_orphan_btn = QPushButton(self.tr("🗑 Eliminar paquetes huérfanos"))
         clean_orphan_btn.setToolTip(self.tr("Los paquetes huérfanos fueron instalados como dependencias y ya no son necesarios."))
         clean_orphan_btn.setStyleSheet("background-color: #f44336; color: white;")
-        clean_orphan_btn.clicked.connect(self.clean_orphans_requested)
+        clean_orphan_btn.clicked.connect(self.clean_orphans_requested.emit)
 
         or_layout.addWidget(clean_orphan_btn)
 
@@ -248,6 +248,9 @@ class CacheTab(QWidget):
         self._total_label.setText(info.total_size_str)
         self._pacman_lbl["size_lbl"].setText(info.pacman_size_str)
         self._yay_lbl["size_lbl"].setText(info.yay_size_str)
+
+    def refresh_view(self):
+        self.refresh_requested.emit()
 
     def set_status(self, text: str, ok: bool = True):
         status_type = "success" if ok else "danger"
@@ -285,7 +288,10 @@ class CacheTab(QWidget):
         day_map = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6}
         saved_day = sched.get("day", "saturday")
         self._sched_day.blockSignals(True)
-        self._sched_day.setCurrentIndex(day_map.get(saved_day, 5) if isinstance(saved_day, str) else saved_day)
+        if policy == "monthly":
+            self._sched_day.setCurrentIndex(self._month_day_to_index(saved_day))
+        else:
+            self._sched_day.setCurrentIndex(day_map.get(saved_day, 5) if isinstance(saved_day, str) else saved_day)
         self._sched_day.blockSignals(False)
 
         self._sched_hour.blockSignals(True)
@@ -342,14 +348,37 @@ class CacheTab(QWidget):
         day_idx = self._sched_day.currentIndex()
         day_str = day_keys[day_idx] if 0 <= day_idx < len(day_keys) else "saturday"
         
-        # Si es mensual, guardamos el texto directamente si no es un índice de día de la semana
         if policy == "monthly":
-            day_str = self._sched_day.currentText()
+            day_str = self._month_day_from_index(day_idx)
 
         sched = {
-            "enabled": self._auto_clean_chk.isChecked() and policy != "manual",
+            "enabled": self._auto_clean_chk.isChecked(),
             "frequency": policy,
             "day": day_str,
             "hour": self._sched_hour.value()
         }
         self._config.set("cache.schedule", sched)
+
+    def _month_day_from_index(self, idx: int) -> str:
+        if idx < 0:
+            return "1"
+        if idx >= 27:
+            return "last"
+        return str(idx + 1)
+
+    def _month_day_to_index(self, day_value) -> int:
+        if isinstance(day_value, int):
+            return min(max(day_value - 1, 0), 27)
+        if isinstance(day_value, str):
+            if day_value == "last":
+                return 27
+            if day_value.isdigit():
+                return min(max(int(day_value) - 1, 0), 27)
+            if day_value == "Último día del mes":
+                return 27
+            if day_value.startswith("día "):
+                try:
+                    return min(max(int(day_value.replace("día ", "")) - 1, 0), 27)
+                except ValueError:
+                    return 0
+        return 0

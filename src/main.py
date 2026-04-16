@@ -8,6 +8,27 @@ from core.config_manager import ConfigManager
 from PyQt6.QtGui import QPalette, QColor
 from PyQt6.QtCore import Qt
 
+
+def load_app_icon() -> QIcon:
+    icon = QIcon.fromTheme("wakka")
+
+    if icon.isNull():
+        candidates = [
+            "/usr/share/icons/hicolor/scalable/apps/wakka.svg",
+            os.path.join(os.path.dirname(__file__), "resources", "wakka.svg"),
+            os.path.join(os.getcwd(), "src", "resources", "wakka.svg"),
+            os.path.join(os.getcwd(), "resources", "wakka.svg"),
+        ]
+        for path in candidates:
+            if os.path.exists(path):
+                icon = QIcon(path)
+                break
+
+        if icon.isNull():
+            icon = QIcon.fromTheme("package-manager")
+
+    return icon
+
 def apply_theme(app, theme_name):
     if theme_name == "system":
         return
@@ -55,23 +76,7 @@ def main():
     translator = Translator()
     translator.load(app)
 
-    # Intentar cargar desde el tema del sistema primero
-    icon = QIcon.fromTheme("wakka")
-
-    # Fallbacks si no está cargado
-    if icon.isNull():
-        candidates = [
-            "/usr/share/icons/hicolor/scalable/apps/wakka.svg",
-            os.path.join(os.path.dirname(__file__), "..", "resources", "wakka.svg"),
-            os.path.join(os.getcwd(), "resources", "wakka.svg")
-        ]
-        for path in candidates:
-            if os.path.exists(path):
-                icon = QIcon(path)
-                break
-        
-        if icon.isNull():
-            icon = QIcon.fromTheme("package-manager")
+    icon = load_app_icon()
 
     # Aplicar Tema
     config = ConfigManager()
@@ -80,6 +85,7 @@ def main():
     app.setWindowIcon(icon)
 
     window = MainWindow()
+    window.setWindowIcon(icon)
     
     # Si se inicia con --tray, no mostramos la ventana principal
     if "--tray" not in sys.argv:

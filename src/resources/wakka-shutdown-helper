@@ -1,0 +1,102 @@
+#!/bin/bash
+# Wakka shutdown helper
+# Ejecuta la instalación de actualizaciones pendientes durante el apagado.
+# Intenta usar yay para cubrir repos oficiales y AUR; si no es viable,
+# cae a pacman como alternativa segura para repos oficiales.
+
+set -euo pipefail
+
+LOG_TAG="wakka-shutdown-helper"
+SETTINGS_FILE=".config/wakka/settings.json"
+
+log() {
+    /usr/bin/systemd-cat -t "$LOG_TAG" /usr/bin/printf '%s\n' "$1"
+}
+
+find_target_user() {
+    if [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
+        echo "$SUDO_USER"
+        return 0
+    fi
+
+    if command -v getent >/dev/null 2>&1; then
+        while IFS=: read -r name _ uid _ _ home shell; do
+            [[ "$uid" -lt 1000 ]] && continue
+            [[ "$shell" == *nologin || "$shell" == *false ]] && continue
+            if [[ -f "$home/$SETTINGS_FILE" ]]; then
+                echo "$name"
+                return 0
+            fi
+        done < <(getent passwd)
+
+        while IFS=: read -r name _ uid _ _ _ shell; do
+            [[ "$uid" -lt 1000 ]] && continue
+            [[ "$shell" == *nologin || "$shell" == *false ]] && continue
+            echo "$name"
+            return 0
+        done < <(getent passwd)
+    fi
+
+    return 1
+}
+
+run_yay_update() {
+    local target_user="$1"
+    local home_dir
+
+    home_dir="$(getent passwd "$target_user" | cut -d: -f6)"
+    if [[ -z "$home_dir" || ! -d "$home_dir" ]]; then
+        log "No se pudo determinar el HOME del usuario $target_user para ejecutar yay."
+        return 1
+    fi
+
+    if ! command -v yay >/dev/null 2>&1; then
+        log "yay no está disponible; no se puede intentar actualización AUR al apagar."
+        return 1
+    fi
+
+    log "Intentando actualizar con yay como usuario $target_user."
+    if /usr/bin/runuser -u "$target_user" -- /usr/bin/env \
+        HOME="$home_dir" \
+        XDG_CACHE_HOME="$home_dir/.cache" \
+        XDG_CONFIG_HOME="$home_dir/.config" \
+        LC_ALL=C.UTF-8 \
+        /usr/bin/yay -Syu --noconfirm --combinedupgrade --batchinstall \
+        --answerclean None --answerdiff None --answeredit None --answerupgrade None \
+        --sudo /usr/bin/sudo --sudoflags "-n"; then
+        log "Actualizaciones instaladas correctamente con yay durante el apagado."
+        return 0
+    fi
+
+    log "yay no pudo completar la actualización no interactiva durante el apagado."
+    return 1
+}
+
+run_pacman_fallback() {
+    if ! command -v pacman >/dev/null 2>&1; then
+        log "pacman no está disponible; se omite la instalación al apagar."
+        return 0
+    fi
+
+    log "Intentando fallback con pacman para paquetes oficiales."
+    if /usr/bin/pacman -Syu --noconfirm; then
+        log "Actualizaciones oficiales instaladas correctamente con pacman."
+        return 0
+    fi
+
+    log "La actualización de fallback con pacman también falló."
+    return 1
+}
+
+log "Iniciando instalación de actualizaciones pendientes antes del apagado."
+
+target_user="$(find_target_user || true)"
+if [[ -n "$target_user" ]]; then
+    if run_yay_update "$target_user"; then
+        exit 0
+    fi
+else
+    log "No se detectó un usuario de sesión adecuado para intentar la actualización con yay."
+fi
+
+run_pacman_fallback
