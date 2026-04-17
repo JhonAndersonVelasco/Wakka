@@ -1,14 +1,29 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QCheckBox, QPushButton, QLabel,
                              QHeaderView, QAbstractItemView)
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QIcon, QColor
+from PyQt6.QtCore import Qt, pyqtSignal, QCoreApplication, QThread
+from PyQt6.QtGui import QIcon
+
+class UpdatesWorker(QThread):
+    finished = pyqtSignal(list)
+    status_msg = pyqtSignal(str)
+
+    def __init__(self, yay_wrapper):
+        super().__init__()
+        self.yay = yay_wrapper
+
+    def run(self):
+        self.status_msg.emit(QCoreApplication.translate("UpdatesWorker", "Buscando actualizaciones disponibles..."))
+        packages = self.yay.get_available_updates()
+        self.finished.emit(packages)
 
 class UpdatesTab(QWidget):
     install_selected = pyqtSignal(list)  # Lista de nombres de paquetes
     install_all = pyqtSignal()
     show_info = pyqtSignal(str, str)
     refresh_requested = pyqtSignal()
+    status_msg = pyqtSignal(str)
+    updates_updated = pyqtSignal(list)
 
     def __init__(self, yay_wrapper, parent=None):
         super().__init__(parent)
@@ -26,7 +41,7 @@ class UpdatesTab(QWidget):
         self.count_label = QLabel(self.tr("(0 paquetes)"))
         header.addWidget(self.count_label)
         header.addStretch()
-
+        
         # Botones
         self.btn_refresh = QPushButton(self.tr("Refrescar"))
         self.btn_refresh.setIcon(QIcon.fromTheme("view-refresh"))
@@ -72,7 +87,18 @@ class UpdatesTab(QWidget):
 
     def load_updates(self):
         self.table.setSortingEnabled(False)
-        self.packages = self.yay.get_available_updates()
+        self.btn_refresh.setEnabled(False)
+        self.btn_update_all.setEnabled(False)
+        self.btn_update_selected.setEnabled(False)
+        
+        self.worker = UpdatesWorker(self.yay)
+        self.worker.status_msg.connect(self.status_msg.emit)
+        self.worker.finished.connect(self.on_updates_loaded)
+        self.worker.start()
+
+    def on_updates_loaded(self, packages):
+        self.packages = packages
+        self.btn_refresh.setEnabled(True)
         self.table.setRowCount(len(self.packages))
 
         for i, pkg in enumerate(self.packages):
@@ -122,6 +148,20 @@ class UpdatesTab(QWidget):
         self.table.setSortingEnabled(True)
         self.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
         self.update_selection_status()
+        
+        if len(self.packages) > 0:
+            self.status_msg.emit(self.tr("{0} actualizaciones disponibles").format(len(self.packages)))
+        else:
+            self.status_msg.emit(self.tr("El sistema está actualizado"))
+        
+        self.updates_updated.emit(self.packages)
+
+    def set_packages(self, packages):
+        """Permite actualizar la lista de paquetes desde una fuente externa (ej. Tray)"""
+        # Solo actualizamos si no hay un worker ya trabajando para evitar colisiones
+        if hasattr(self, 'worker') and self.worker.isRunning():
+            return
+        self.on_updates_loaded(packages)
 
     def update_selection_status(self):
         selected_count = 0

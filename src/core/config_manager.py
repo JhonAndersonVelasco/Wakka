@@ -300,7 +300,7 @@ class ConfigManager:
     def set_autostart(self, enabled: bool):
         self.set("autostart", enabled)
         autostart_dir = Path.home() / ".config" / "autostart"
-        autostart_file = autostart_dir / "wakka.desktop"
+        autostart_file = autostart_dir / "wakka-tray.desktop"
         
         # We use absolute paths to ensure the desktop entry works in dev environment
         # sys.argv[0] is the script path, sys.executable is the python path
@@ -328,7 +328,7 @@ StartupNotify=false
             autostart_file.unlink(missing_ok=True)
 
     def is_autostart_actually_enabled(self) -> bool:
-        autostart_file = Path.home() / ".config" / "autostart" / "wakka.desktop"
+        autostart_file = Path.home() / ".config" / "autostart" / "wakka-tray.desktop"
         return autostart_file.exists()
 
     def set_shutdown_updates(self, enabled: bool) -> tuple[bool, str]:

@@ -2,14 +2,29 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
                              QPushButton, QTableWidget, QTableWidgetItem,
                              QFileDialog, QHeaderView, QAbstractItemView, QLabel,
                              QCheckBox)
-from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtCore import pyqtSignal, Qt, QThread, QCoreApplication
 from PyQt6.QtGui import QIcon, QColor
+
+class SearchWorker(QThread):
+    finished = pyqtSignal(list)
+    status_msg = pyqtSignal(str)
+
+    def __init__(self, yay_wrapper, query):
+        super().__init__()
+        self.yay = yay_wrapper
+        self.query = query
+
+    def run(self):
+        self.status_msg.emit(QCoreApplication.translate("SearchWorker", "Cargando resultados de búsqueda para '{0}'...").format(self.query))
+        packages = self.yay.search_packages(self.query)
+        self.finished.emit(packages)
 
 class SearchTab(QWidget):
     install_package = pyqtSignal(str)
     install_selected = pyqtSignal(list)
     install_local = pyqtSignal(str)
     show_info = pyqtSignal(str, str)
+    status_msg = pyqtSignal(str)
 
     def __init__(self, yay_wrapper, parent=None):
         super().__init__(parent)
@@ -69,7 +84,17 @@ class SearchTab(QWidget):
 
         self.table.setSortingEnabled(False)
         self.table.setRowCount(0) # Limpiar resultados anteriores
-        results = self.yay.search_packages(query)
+        
+        # Desactivar input mientras busca
+        self.search_input.setEnabled(False)
+        
+        self.worker = SearchWorker(self.yay, query)
+        self.worker.status_msg.connect(self.status_msg.emit)
+        self.worker.finished.connect(self.on_search_finished)
+        self.worker.start()
+
+    def on_search_finished(self, results):
+        self.search_input.setEnabled(True)
         self.table.setRowCount(len(results))
 
         for i, pkg in enumerate(results):
@@ -137,6 +162,8 @@ class SearchTab(QWidget):
         self.table.setSortingEnabled(True)
         self.table.sortByColumn(5, Qt.SortOrder.DescendingOrder)
         self.update_selection_status()
+        
+        self.status_msg.emit(self.tr("Búsqueda completada: {0} resultados").format(len(results)))
 
     def update_selection_status(self):
         selected_count = 0

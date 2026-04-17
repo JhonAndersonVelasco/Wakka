@@ -24,11 +24,17 @@ case "$ACTION" in
     refresh)
         /usr/bin/yay -Sy --noconfirm
         ;;
+    unlock)
+        /usr/bin/rm -f /var/lib/pacman/db.lck
+        ;;
     apply-pacman-conf)
         /usr/bin/cp "$1" /etc/pacman.conf
         ;;
     set-shutdown-service)
         /usr/bin/systemctl "$1" wakka-shutdown.service
+        ;;
+    kill)
+        /usr/bin/kill -9 "$1"
         ;;
     *)
         echo "Acción no válida: $ACTION"

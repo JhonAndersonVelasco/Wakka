@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, pyqtSignal, QLocale, QProcess, QTimer
+from PyQt6.QtCore import Qt, pyqtSignal, QLocale, QProcess, QTimer, QThread, QCoreApplication
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QGroupBox, QComboBox, QCheckBox,
@@ -6,7 +6,6 @@ from PyQt6.QtWidgets import (
     QFormLayout, QListView, QButtonGroup, QRadioButton,
     QFileDialog, QMessageBox, QApplication, QTextEdit
 )
-from PyQt6.QtGui import QIcon
 
 from core.config_manager import ConfigManager
 import sys
@@ -31,12 +30,26 @@ def style_status(status_type: str, size: int) -> str:
     colors = {"success": "#4CAF50", "danger": "#f44336", "info": "#2196F3"}
     return f"font-size: {size}px; color: {colors.get(status_type, 'gray')};"
 
+class SettingsWorker(QThread):
+    finished = pyqtSignal(list)
+    status_msg = pyqtSignal(str)
+
+    def __init__(self, yay_wrapper):
+        super().__init__()
+        self.yay = yay_wrapper
+
+    def run(self):
+        self.status_msg.emit(QCoreApplication.translate("SettingsWorker", "Cargando configuración de Wakka..."))
+        packages = self.yay.get_installed_packages()
+        self.finished.emit(packages)
+
 class SettingsTab(QWidget):
     theme_changed     = pyqtSignal(str)
     language_changed  = pyqtSignal(str)
     autostart_changed = pyqtSignal(bool)
     shutdown_updates_changed = pyqtSignal(bool)
     schedule_changed  = pyqtSignal(bool, dict)
+    status_msg        = pyqtSignal(str)
 
     def __init__(self, config: ConfigManager, parent=None):
         super().__init__(parent)
@@ -353,6 +366,8 @@ class SettingsTab(QWidget):
         label.setStyleSheet(style_status(status_type, 11))
         # Tras el tiempo indicado, borramos el texto si no ha sido cambiado por otro mensaje
         QTimer.singleShot(timeout_ms, lambda: label.setText("") if label.text() == text else None)
+        if text:  # Evita emitir strings vacíos a la barra
+            self.status_msg.emit(text)
 
     def _on_theme_changed(self, idx):
         self._handle_restart_setting_change()
@@ -533,8 +548,8 @@ class SettingsTab(QWidget):
             ts_file = i18n_dir / f"{code}.ts"
 
         if not ts_file.exists():
-            status = self.tr("⛔ El archivo .ts no existe.")
-            self._set_status(self._trans_status, status, "danger")
+            status_msg = self.tr("⛔ El archivo .ts no existe.")
+            self._set_status(self._trans_status, status_msg, "danger")
             return
 
         dialog = TranslationEditorDialog(str(ts_file), self)
@@ -748,8 +763,8 @@ class SettingsTab(QWidget):
         enabled = state == Qt.CheckState.Checked.value
         ok, msg = self._config.set_shutdown_updates(enabled)
         if ok:
-            status = self.tr("Servicio habilitado ✓") if enabled else self.tr("Servicio deshabilitado")
-            self._set_status(self._shutd_status, status, "success")
+            status_msg = self.tr("Servicio habilitado ✓") if enabled else self.tr("Servicio deshabilitado")
+            self._set_status(self._shutd_status, status_msg, "success")
         else:
             if msg == "Cancelled":
                 # Si se canceló, revertimos el estado del checkbox sin mostrar error

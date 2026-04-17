@@ -2,18 +2,18 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QHeaderView, QCheckBox,
                              QAbstractItemView, QMessageBox, QLineEdit, QLabel)
 from PyQt6.QtCore import pyqtSignal, Qt, QThread, QCoreApplication
-from PyQt6.QtGui import QIcon, QColor
+from PyQt6.QtGui import QIcon
 
 class InstalledWorker(QThread):
     finished = pyqtSignal(list)
-    status = pyqtSignal(str)
+    status_msg = pyqtSignal(str)
 
     def __init__(self, yay_wrapper):
         super().__init__()
         self.yay = yay_wrapper
 
     def run(self):
-        self.status.emit(QCoreApplication.translate("InstalledWorker", "Cargando paquetes instalados..."))
+        self.status_msg.emit(QCoreApplication.translate("InstalledWorker", "Cargando paquetes instalados..."))
         packages = self.yay.get_installed_packages()
         self.finished.emit(packages)
 
@@ -89,7 +89,7 @@ class InstalledTab(QWidget):
 
         self.worker = InstalledWorker(self.yay)
         self.worker.finished.connect(self.on_loading_finished)
-        self.worker.status.connect(self.status_msg.emit) # Conectar el estado del worker al estado de la pestaña
+        self.worker.status_msg.connect(self.status_msg.emit) # Conectar el estado del worker al estado de la pestaña
         self.worker.start()
 
     def on_loading_finished(self, packages):
@@ -193,7 +193,11 @@ class InstalledTab(QWidget):
                 self.remove_selected.emit(selected)
 
     def filter_packages(self, text):
-        filtered = [p for p in self.packages if text.lower() in p.name.lower()]
+        search_text = text.lower()
+        filtered = [
+            p for p in self.packages 
+            if search_text in p.name.lower() or (p.description and search_text in p.description.lower())
+        ]
         self.update_table(filtered)
 
     def confirm_remove(self, package_name):

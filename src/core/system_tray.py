@@ -3,7 +3,7 @@ import datetime
 import calendar
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu
 from PyQt6.QtGui import QIcon, QColor, QPixmap, QPainter, QAction, QFont
-from PyQt6.QtCore import Qt, pyqtSignal, QObject, QRect, QTimer
+from PyQt6.QtCore import Qt, pyqtSignal, QObject, QRect, QTimer, QThread, QCoreApplication
 
 
 def load_app_icon() -> QIcon:
@@ -26,11 +26,25 @@ def load_app_icon() -> QIcon:
 
     return icon
 
+class TrayUpdatesWorker(QThread):
+    finished = pyqtSignal(list)
+
+    def __init__(self, yay_wrapper):
+        super().__init__()
+        self.yay = yay_wrapper
+
+    def run(self):
+        try:
+            updates = self.yay.get_available_updates()
+            self.finished.emit(updates)
+        except Exception:
+            self.finished.emit([])
+
 class TrayIcon(QObject):
     show_window = pyqtSignal()
     quit_app = pyqtSignal()
     update_requested = pyqtSignal()
-    updates_checked = pyqtSignal(int)
+    updates_checked = pyqtSignal(list)
 
     def __init__(self, yay_wrapper, config_mgr, cache_mgr, parent=None):
         super().__init__(parent)
@@ -195,16 +209,33 @@ class TrayIcon(QObject):
             )
 
     def check_updates_silent(self):
-        updates = self.yay.get_available_updates()
+        # Evitar múltiples chequeos simultáneos
+        if hasattr(self, 'update_worker') and self.update_worker.isRunning():
+            return
+
+        self.update_worker = TrayUpdatesWorker(self.yay)
+        self.update_worker.finished.connect(self.on_updates_checked_silent)
+        self.update_worker.start()
+
+    def on_updates_checked_silent(self, updates):
         count = len(updates)
         self.set_update_count(count)
-        self.updates_checked.emit(count)
+        self.updates_checked.emit(updates)
 
         if count > 0 and self.config_mgr.get("notifications", True):
             self.show_notification(
                 self.tr("Actualizaciones disponibles"),
                 self.tr("Hay {0} paquetes listos para actualizar").format(count)
             )
+
+    def set_busy(self, busy: bool):
+        """Desactiva o activa las acciones del tray según si hay una operación en curso"""
+        if busy:
+            self.update_action.setEnabled(False)
+            self.update_action.setText(self.tr("Operación en curso..."))
+        else:
+            # Restauramos el estado normal según el contador de actualizaciones
+            self.set_update_count(self.update_count)
 
     def show(self):
         self.tray.show()

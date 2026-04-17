@@ -1,4 +1,5 @@
 import os
+import subprocess
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QProgressBar, QMessageBox
     )
@@ -38,24 +39,6 @@ class TerminalDialog(QDialog):
         self.operation_succeeded = False
         self.setup_ui()
 
-        # Check for pacman lock file before starting the worker thread
-        lock_file = "/var/lib/pacman/db.lck"
-        if os.path.exists(lock_file):
-            reply = QMessageBox.question(self, self.tr("Wakka"), 
-                self.tr("Se ha detectado el archivo de bloqueo de Pacman: {0}\n¿Desea eliminarlo para liberar la gestión de paquetes?").format(os.path.basename(lock_file)),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
-                QMessageBox.StandardButton.No)
-
-            if reply == QMessageBox.StandardButton.Yes:
-                try:
-                    os.remove(lock_file)
-                    self.append_output(self.tr("✅ Archivo de bloqueo {0} eliminado exitosamente.").format(os.path.basename(lock_file)))
-                except OSError as e:
-                    self.append_output(self.tr("❌ Error al eliminar el archivo {0}: {1}").format(os.path.basename(lock_file), e))
-            else:
-                # Si el usuario dice no, simplemente continuamos con la operación original sin modificar nada en el terminal
-                pass 
-
         self.setup_worker()
 
     def setup_ui(self):
@@ -74,7 +57,7 @@ class TerminalDialog(QDialog):
                 background-color: #1e1e1e;
                 color: #00ff00;
                 font-family: 'Monospace', 'Courier New';
-                font-size: 12px;
+                font-size: 14px;
                 padding: 10px;
                 border: none;
             }
@@ -153,9 +136,32 @@ class TerminalDialog(QDialog):
     
     def cancel_operation(self):
         if self.process and self.process.poll() is None:
-            self.process.terminate()
+            try:
+                self.process.terminate()
+                self.append_output(self.tr("\n⚠️ Operación cancelada por el usuario"))
+            except PermissionError:
+                self.append_output(self.tr("\n⚠️ La operación requiere privilegios de root para ser cancelada."))
+                self.append_output(self.tr("Iniciando solicitud de cancelación con privilegios..."))
+                
+                try:
+                    # Intentar matar el proceso usando el ayudante para usar la política de Wakka
+                    result = subprocess.run(
+                        ["pkexec", "/usr/bin/wakka-helper", "kill", str(self.process.pid)],
+                        capture_output=True,
+                        text=True,
+                        check=True
+                    )
+                    self.append_output(self.tr("\n✅ Operación cancelada exitosamente con privilegios."))
+                except subprocess.CalledProcessError as e:
+                    error_msg = e.stderr if e.stderr else e.stdout
+                    self.append_output(self.tr("\n❌ Error al cancelar: {0}").format(error_msg.strip()))
+                    return
+                except Exception as e:
+                    self.append_output(self.tr("\n❌ No se pudo cancelar la operación: {0}").format(e))
+                    return
+            
+            # Actualizar estado de la operación y UI
             self.operation_succeeded = False
-            self.append_output(self.tr("\n⚠️ Operación cancelada por el usuario"))
             self.cancel_btn.setEnabled(False)
             self.close_btn.setEnabled(True)
 

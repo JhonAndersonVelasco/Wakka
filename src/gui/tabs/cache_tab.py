@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QThread, QCoreApplication
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QGroupBox, QSpinBox, QFrame, QScrollArea,
@@ -31,12 +31,26 @@ def style_status(status_type: str, size: int) -> str:
     colors = {"success": "#4CAF50", "danger": "#f44336", "info": "#2196F3"}
     return f"font-size: {size}px; color: {colors.get(status_type, 'gray')};"
 
+class CacheWorker(QThread):
+    finished = pyqtSignal(list)
+    status_msg = pyqtSignal(str)
+
+    def __init__(self, yay_wrapper):
+        super().__init__()
+        self.yay = yay_wrapper
+
+    def run(self):
+        self.status_msg.emit(QCoreApplication.translate("InstalledWorker", "Administrar el caché de paquetes..."))
+        packages = self.yay.get_installed_packages()
+        self.finished.emit(packages)
+
 class CacheTab(QWidget):
     clean_pacman_requested     = pyqtSignal(int)
     clean_pacman_uninstalled   = pyqtSignal()
     clean_yay_requested        = pyqtSignal()
     clean_orphans_requested    = pyqtSignal()
     refresh_requested          = pyqtSignal()
+    status_msg                 = pyqtSignal(str)
 
     def __init__(self, config: ConfigManager, parent=None):
         super().__init__(parent)
@@ -248,14 +262,11 @@ class CacheTab(QWidget):
         self._total_label.setText(info.total_size_str)
         self._pacman_lbl["size_lbl"].setText(info.pacman_size_str)
         self._yay_lbl["size_lbl"].setText(info.yay_size_str)
+        self.status_msg.emit(self.tr("Cálculo de caché completado"))
 
     def refresh_view(self):
+        self.status_msg.emit(self.tr("Calculando espacio en caché..."))
         self.refresh_requested.emit()
-
-    def set_status(self, text: str, ok: bool = True):
-        status_type = "success" if ok else "danger"
-        self._status.setText(text)
-        self._status.setStyleSheet(style_status(status_type, size=13) + " font-weight: 600;")
 
     def _on_auto_clean_changed(self, state):
         enabled = state == Qt.CheckState.Checked.value

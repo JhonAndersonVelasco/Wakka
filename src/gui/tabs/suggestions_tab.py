@@ -1,13 +1,12 @@
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
-                             QFrame, QLabel, QPushButton, QGridLayout, QGroupBox,
-                             QProgressBar)
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QFrame, QLabel, QPushButton, QGridLayout, QGroupBox
+    )
 from PyQt6.QtCore import Qt, pyqtSignal, QThread, QCoreApplication
 from PyQt6.QtGui import QFont
-import random
 
 class SuggestionsWorker(QThread):
     finished = pyqtSignal(dict)
-    status = pyqtSignal(str)
+    status_msg = pyqtSignal(str)
 
     def __init__(self, yay):
         super().__init__()
@@ -15,7 +14,7 @@ class SuggestionsWorker(QThread):
 
     def run(self):
         # El callback permite que la UI reciba actualizaciones de texto
-        results = self.yay.get_popular_suggestions(progress_callback=self.status.emit)
+        results = self.yay.get_popular_suggestions(progress_callback=self.status_msg.emit)
         self.finished.emit(results)
 
 class PackageCard(QFrame):
@@ -141,7 +140,7 @@ class SuggestionsTab(QWidget):
         # Si ya existe un worker corriendo de una petición anterior, 
         # desconectamos sus señales para que no intente actualizar widgets eliminados
         if hasattr(self, 'worker') and self.worker and self.worker.isRunning():
-            self.worker.status.disconnect()
+            self.worker.status_msg.disconnect()
 
         # Mostrar mensaje de carga inicial
         self.loading_label = QLabel(self.tr("🔍 Buscando recomendaciones en la Arch Wiki..."))
@@ -151,7 +150,7 @@ class SuggestionsTab(QWidget):
 
         # Configurar y lanzar el hilo
         self.worker = SuggestionsWorker(self.yay)
-        self.worker.status.connect(self.update_loading_status)
+        self.worker.status_msg.connect(self.update_loading_status)
         self.worker.finished.connect(self.on_loading_finished)
         self.worker.start()
 

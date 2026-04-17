@@ -1,12 +1,1 @@
-[Desktop Entry]
-Name=Wakka
-Name[en]=Wakka
-Comment=Gestor de paquetes para Arch Linux
-Comment[en]=Package manager for Arch Linux
-Exec=wakka %f
-Icon=wakka
-Categories=Settings;System;PackageManager;
-MimeType=application/x-archlinux-package;application/x-deb;application/x-rpm;
-Terminal=false
-StartupNotify=true
-Keywords=package;install;remove;update;aur;yay;pacman;
+/home/jhon/Desarrollos/Wakka/wakka.desktop

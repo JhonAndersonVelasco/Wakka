@@ -185,7 +185,9 @@ class YayWrapper:
 
     def search_packages(self, query: str) -> List[Package]:
         """Busca paquetes en repos y AUR"""
-        result = self._run([self.yay_path, "-Ss", query])
+        # Dividimos por espacios para que pacman/yay busquen cada término (comportamiento AND)
+        cmd = [self.yay_path, "-Ss"] + query.split()
+        result = self._run(cmd)
         packages = []
 
         if result and result.stdout:
@@ -301,6 +303,29 @@ class YayWrapper:
                 suggestions_by_category[category] = selected_apps_for_category
 
         return suggestions_by_category
+
+    def is_locked(self) -> bool:
+        """Verifica si existe el archivo de bloqueo de pacman"""
+        return os.path.exists("/var/lib/pacman/db.lck")
+
+    def unlock(self) -> bool:
+        """Elimina el archivo de bloqueo de pacman usando el ayudante"""
+        try:
+            # Capturar salida para poder informar si falla (ej. error de pkexec o del script)
+            result = subprocess.run(
+                ["pkexec", "/usr/bin/wakka-helper", "unlock"], 
+                capture_output=True, 
+                text=True, 
+                check=True
+            )
+            return True
+        except subprocess.CalledProcessError as e:
+            msg = e.stderr if e.stderr else e.stdout
+            print(f"Error al desbloquear: {msg}")
+            return False
+        except Exception as e:
+            print(f"Error inesperado al desbloquear: {e}")
+            return False
 
     def refresh_databases(self) -> subprocess.Popen:
         """Sincroniza las bases de datos de los repositorios (requiere root)"""
