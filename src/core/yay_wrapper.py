@@ -45,6 +45,7 @@ class Package:
     install_date: str = ""
     votes: str = "0"
     popularity: str = "0"
+    last_used: str = ""  # Fecha de último uso (atime de ejecutables)
 
 
 class YayWrapper:
@@ -232,6 +233,59 @@ class YayWrapper:
                 i += 1
         return packages
 
+    def get_package_last_used(self, name: str) -> str:
+        """
+        Lee el último tiempo de acceso (atime) de los ejecutables del paquete
+        para estimar cuándo fue utilizado por última vez.
+        Lee directamente el îndice de pacman para rapidez (sin subprocess).
+        """
+        pacman_db = f"/var/lib/pacman/local/{name}"
+
+        # Buscar el directorio del paquete (puede tener versión en el nombre)
+        if not os.path.isdir(pacman_db):
+            candidates = [
+                d for d in os.listdir("/var/lib/pacman/local")
+                if d == name or d.startswith(f"{name}-")
+            ]
+            if not candidates:
+                return ""
+            pacman_db = f"/var/lib/pacman/local/{candidates[0]}"
+
+        files_list = os.path.join(pacman_db, "files")
+        if not os.path.exists(files_list):
+            return ""
+
+        # Directorios de interés para determinar "uso"
+        EXEC_DIRS = ("/usr/bin/", "/usr/sbin/", "/bin/", "/sbin/",
+                     "/usr/lib/", "/usr/lib64/", "/usr/libexec/")
+
+        latest_atime = 0.0
+        try:
+            with open(files_list) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("%"):
+                        continue
+                    # El archivo lists las rutas sin la "/" inicial
+                    full_path = f"/{line}"
+                    if not any(full_path.startswith(d) for d in EXEC_DIRS):
+                        continue
+                    try:
+                        st = os.stat(full_path)
+                        if st.st_atime > latest_atime:
+                            latest_atime = st.st_atime
+                    except (OSError, PermissionError):
+                        continue
+        except Exception:
+            return ""
+
+        if latest_atime == 0.0:
+            return ""
+
+        import datetime
+        dt = datetime.datetime.fromtimestamp(latest_atime)
+        return dt.strftime("%d %b %Y")
+
     def get_installed_packages(self) -> List[Package]:
         """Obtiene todos los paquetes instalados"""
         result = self._run([self.pacman_path, "-Qi"])
@@ -259,7 +313,8 @@ class YayWrapper:
                         repo="local",
                         installed=True,
                         install_date=short_date,
-                        size=pkg_info.get('Installed Size', pkg_info.get('Tamaño de la instalación', ''))
+                        size=pkg_info.get('Installed Size', pkg_info.get('Tamaño de la instalación', '')),
+                        last_used=self.get_package_last_used(name)
                     ))
         return packages
 

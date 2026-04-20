@@ -1,10 +1,11 @@
-from PyQt6.QtCore import pyqtSignal, Qt, QThread, QCoreApplication, QTimer
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import pyqtSignal, Qt, QThread, QCoreApplication, QTimer, QDateTime
+from PyQt6.QtGui import QIcon, QColor
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QHeaderView, QCheckBox,
     QTableWidgetItem, QMessageBox, QLineEdit, QLabel
 )
 from gui.widgets import PackageTable
+from datetime import datetime
 
 class InstalledWorker(QThread):
     finished = pyqtSignal(list)
@@ -26,11 +27,18 @@ class NumericTableWidgetItem(QTableWidgetItem):
             return self.data(Qt.ItemDataRole.UserRole) < other.data(Qt.ItemDataRole.UserRole)
         return super().__lt__(other)
 
+class DateTableWidgetItem(QTableWidgetItem):
+    """Item de tabla que se ordena por fecha usando UserRole"""
+    def __lt__(self, other):
+        if isinstance(other, QTableWidgetItem):
+            return self.data(Qt.ItemDataRole.UserRole) < other.data(Qt.ItemDataRole.UserRole)
+        return super().__lt__(other)
+
 class InstalledTab(QWidget):
     remove_package = pyqtSignal(str)
     remove_selected = pyqtSignal(list)
     show_info = pyqtSignal(str, str)
-    status_msg = pyqtSignal(str) # Nueva señal para la barra de estado
+    status_msg = pyqtSignal(str)
 
     def __init__(self, yay_wrapper, parent=None):
         super().__init__(parent)
@@ -88,9 +96,10 @@ class InstalledTab(QWidget):
 
         # Tabla
         self.table = PackageTable()
-        self.table.setColumnCount(6)
+        self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels([
-            "", self.tr("Nombre"), self.tr("Versión"), self.tr("Tamaño"), self.tr("Instalado el"), self.tr("Acciones")
+            "", self.tr("Nombre"), self.tr("Versión"), self.tr("Tamaño"),
+            self.tr("Instalado el"), self.tr("Último uso"), self.tr("Acciones")
         ])
 
         header_view = self.table.horizontalHeader()
@@ -100,35 +109,34 @@ class InstalledTab(QWidget):
         self.table.enter_pressed.connect(self._on_table_enter)
         layout.addWidget(self.table)
 
-        self.loading_label = QLabel(self.tr("Cargando paquetes instalados...")) # Etiqueta de carga inicial
+        self.loading_label = QLabel(self.tr("Cargando paquetes instalados..."))
         self.loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.loading_label.setStyleSheet("font-size: 14px; color: #2196F3; padding: 20px;")
         layout.addWidget(self.loading_label)
-        self.loading_label.hide() # Ocultar inicialmente, mostrar al cargar
+        self.loading_label.hide()
 
         self.load_packages()
 
     def load_packages(self):
-        self.table.setRowCount(0) # Limpiar tabla
-        self.loading_label.show() # Mostrar mensaje de carga
+        self.table.setRowCount(0)
+        self.loading_label.show()
         self.status_msg.emit(self.tr("Cargando paquetes instalados..."))
 
         self.worker = InstalledWorker(self.yay)
         self.worker.finished.connect(self.on_loading_finished)
-        self.worker.status_msg.connect(self.status_msg.emit) # Conectar el estado del worker al estado de la pestaña
+        self.worker.status_msg.connect(self.status_msg.emit)
         self.worker.start()
 
     def on_loading_finished(self, packages):
-        self.packages = packages # Almacenar los paquetes cargados
-        self.loading_label.hide() # Ocultar mensaje de carga
+        self.packages = packages
+        self.loading_label.hide()
         self.count_label.setText(self.tr("{0} paquetes instalados").format(len(packages)))
-        self.status_msg.emit(self.tr("Paquetes instalados cargados")) # Limpiar barra de estado después de 3 segundos
+        self.status_msg.emit(self.tr("Paquetes instalados cargados"))
         self.update_table(self.packages)
 
     def _parse_size_to_bytes(self, size_str):
         """Convierte '1723,94 KiB' o '9.87 MiB' a un float para ordenar"""
         try:
-            # Reemplazar coma decimal por punto y extraer número y unidad
             s = size_str.replace(',', '.')
             parts = s.split()
             if not parts: return 0
@@ -136,6 +144,37 @@ class InstalledTab(QWidget):
             unit = parts[1].upper()
             multipliers = {"B": 1, "KIB": 1024, "MIB": 1024**2, "GIB": 1024**3, "TIB": 1024**4}
             return val * multipliers.get(unit, 1)
+        except:
+            return 0
+
+    def _parse_date_to_timestamp(self, date_str):
+        """Convierte string de fecha a timestamp para ordenar"""
+        if not date_str or date_str == "-":
+            return 0
+        
+        try:
+            # Formatos comunes: "2024-01-15", "15/01/2024", "Jan 15 2024", etc.
+            date_formats = [
+                "%Y-%m-%d",
+                "%d/%m/%Y",
+                "%d-%m-%Y",
+                "%Y/%m/%d",
+                "%b %d %Y",
+                "%d %b %Y",
+                "%B %d %Y",
+                "%d %B %Y",
+                "%Y-%m-%d %H:%M:%S",
+                "%d/%m/%Y %H:%M:%S",
+            ]
+            
+            for fmt in date_formats:
+                try:
+                    dt = datetime.strptime(date_str.strip(), fmt)
+                    return int(dt.timestamp())
+                except ValueError:
+                    continue
+            
+            return 0
         except:
             return 0
 
@@ -167,8 +206,21 @@ class InstalledTab(QWidget):
             size_item.setData(Qt.ItemDataRole.UserRole, size_bytes)
             self.table.setItem(i, 3, size_item)
 
-            # Fecha de instalación
-            self.table.setItem(i, 4, QTableWidgetItem(pkg.install_date))
+            # Fecha de instalación (Ordenable)
+            install_date_item = DateTableWidgetItem(pkg.install_date)
+            install_timestamp = self._parse_date_to_timestamp(pkg.install_date)
+            install_date_item.setData(Qt.ItemDataRole.UserRole, install_timestamp)
+            self.table.setItem(i, 4, install_date_item)
+
+            # Último uso (Ordenable)
+            last_used_text = pkg.last_used if pkg.last_used else self.tr("-")
+            last_used_item = DateTableWidgetItem(last_used_text)
+            last_used_timestamp = self._parse_date_to_timestamp(pkg.last_used) if pkg.last_used else 0
+            last_used_item.setData(Qt.ItemDataRole.UserRole, last_used_timestamp)
+            if not pkg.last_used:
+                last_used_item.setToolTip(self.tr("Sin ejecutables detectados o no usado desde la instalación"))
+                last_used_item.setForeground(QColor("gray"))
+            self.table.setItem(i, 5, last_used_item)
 
             # Acciones
             actions_widget = QWidget()
@@ -189,9 +241,10 @@ class InstalledTab(QWidget):
             remove_btn.clicked.connect(lambda checked, p=pkg.name: self.confirm_remove(p))
             actions_layout.addWidget(remove_btn)
 
-            self.table.setCellWidget(i, 5, actions_widget)
+            self.table.setCellWidget(i, 6, actions_widget)
 
         self.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
+        self.table.setSortingEnabled(True)
         self.update_selection_status()
 
     def _on_table_enter(self, row):
@@ -224,7 +277,6 @@ class InstalledTab(QWidget):
                 self.remove_selected.emit(selected)
 
     def _on_search_text_changed(self, text):
-        # Reiniciar el timer cada vez que el usuario escribe
         self.search_timer.start(300)
 
     def filter_packages(self):

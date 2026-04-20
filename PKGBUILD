@@ -2,7 +2,7 @@
 
 pkgname=wakka
 pkgver=1.0.0
-pkgrel=1
+pkgrel=2
 install=src/wakka.install
 pkgdesc="Moderna interfaz gráfica para pacman y yay con integración de IA"
 arch=('any')

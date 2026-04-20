@@ -2,11 +2,11 @@ import os
 import sys
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QPalette, QColor
+from PyQt6.QtCore import Qt
 from gui.main_window import MainWindow
 from i18n.translator import Translator
 from core.config_manager import ConfigManager
-from PyQt6.QtGui import QPalette, QColor
-from PyQt6.QtCore import Qt
 
 
 def load_app_icon() -> QIcon:
