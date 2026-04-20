@@ -228,12 +228,22 @@
 </context><context>
     <name>InstalledTab</name>
     <message>
-        <location filename="../gui/tabs/installed_tab.py" line="43" />
-        <source>&lt;h2&gt;Aplicaciones instaladas&lt;/h2&gt;</source>
-        <translation>&lt;h2&gt;Installed Applications&lt;/h2&gt;</translation>
+        <location filename="../gui/tabs/installed_tab.py" line="46" />
+        <source>Aplicaciones instaladas</source>
+        <translation>Installed Applications</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/installed_tab.py" line="46" />
+        <location filename="../gui/tabs/installed_tab.py" line="50" />
+        <source>{0} paquetes instalados</source>
+        <translation>{0} installed packages</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/installed_tab.py" line="53" />
+        <source>Cargando...</source>
+        <translation>Loading...</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/installed_tab.py" line="57" />
         <source>Filtrar instaladas...</source>
         <translation>Filter installed...</translation>
     </message>
@@ -1308,14 +1318,19 @@ Restart Wakka to apply them.</translation>
 </context><context>
     <name>UpdatesTab</name>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="24" />
-        <source>&lt;h2&gt;Actualizaciones disponibles&lt;/h2&gt;</source>
-        <translation>&lt;h2&gt;Updates available&lt;/h2&gt;</translation>
+        <location filename="../gui/tabs/updates_tab.py" line="45" />
+        <source>Actualizaciones disponibles</source>
+        <translation>Updates available</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="26" />
-        <source>(0 paquetes)</source>
-        <translation>(0 packages)</translation>
+        <location filename="../gui/tabs/updates_tab.py" line="49" />
+        <source>Buscando actualizaciones...</source>
+        <translation>Checking for updates...</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/updates_tab.py" line="60" />
+        <source>Próximo chequeo:</source>
+        <translation>Next check:</translation>
     </message>
     <message>
         <location filename="../gui/tabs/updates_tab.py" line="31" />

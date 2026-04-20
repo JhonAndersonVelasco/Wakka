@@ -6,9 +6,8 @@ from core.system_tray import TrayIcon
 from core.google_client import GoogleClient
 from core.config_manager import ConfigManager
 from core.cache_manager import CacheManager
-from gui.tabs.suggestions_tab import SuggestionsTab
+from gui.tabs.explore_tab import ExploreTab
 from gui.tabs.updates_tab import UpdatesTab
-from gui.tabs.search_tab import SearchTab
 from gui.tabs.installed_tab import InstalledTab
 from gui.tabs.cache_tab import CacheTab
 from gui.tabs.settings_tab import SettingsTab
@@ -39,12 +38,14 @@ class MainWindow(QMainWindow):
         # Tabs principales
         self.tabs = QTabWidget()
 
-        # Tab 1: Sugerencias
-        self.suggestions_tab = SuggestionsTab(self.yay)
-        self.suggestions_tab.install_package.connect(self.install_package)
-        self.suggestions_tab.show_info.connect(self.show_package_info)
-        self.suggestions_tab.status_msg.connect(self.set_status_message)
-        self.tabs.addTab(self.suggestions_tab, self.tr("⭐ Sugerencias"))
+        # Tab 1: Explorar (Sugerencias + Buscar)
+        self.explore_tab = ExploreTab(self.yay)
+        self.explore_tab.install_package.connect(self.install_package)
+        self.explore_tab.install_selected.connect(self.install_packages)
+        self.explore_tab.show_info.connect(self.show_package_info)
+        self.explore_tab.install_local.connect(self.install_local_package)
+        self.explore_tab.status_msg.connect(self.set_status_message)
+        self.tabs.addTab(self.explore_tab, self.tr("🌍 Explorar"))
 
         # Tab 2: Actualizaciones
         self.updates_tab = UpdatesTab(self.yay)
@@ -54,18 +55,10 @@ class MainWindow(QMainWindow):
         self.updates_tab.refresh_requested.connect(self.run_full_refresh)
         self.updates_tab.status_msg.connect(self.set_status_message)
         self.updates_tab.updates_updated.connect(lambda pkgs: self.tray.set_update_count(len(pkgs)))
+        self.tray.next_check_countdown.connect(self.updates_tab.set_countdown)
         self.tabs.addTab(self.updates_tab, self.tr("⬆️ Actualizaciones"))
 
-        # Tab 3: Buscar
-        self.search_tab = SearchTab(self.yay)
-        self.search_tab.install_package.connect(self.install_package)
-        self.search_tab.install_selected.connect(self.install_packages)
-        self.search_tab.show_info.connect(self.show_package_info)
-        self.search_tab.install_local.connect(self.install_local_package)
-        self.search_tab.status_msg.connect(self.set_status_message)
-        self.tabs.addTab(self.search_tab, self.tr("🔍 Buscar"))
-
-        # Tab 4: Instaladas
+        # Tab 3: Instaladas
         self.installed_tab = InstalledTab(self.yay)
         self.installed_tab.remove_package.connect(self.remove_package)
         self.installed_tab.remove_selected.connect(self.remove_packages)
@@ -73,7 +66,7 @@ class MainWindow(QMainWindow):
         self.installed_tab.status_msg.connect(self.set_status_message)
         self.tabs.addTab(self.installed_tab, self.tr("📦 Instaladas"))
 
-        # Tab 5: Limpieza
+        # Tab 4: Limpieza
         self.cache_tab = CacheTab(self.config_mgr)
         self.cache_tab.clean_pacman_requested.connect(self.run_clean_pacman)
         self.cache_tab.clean_pacman_uninstalled.connect(self.run_clean_pacman_uninstalled)
@@ -81,9 +74,10 @@ class MainWindow(QMainWindow):
         self.cache_tab.clean_orphans_requested.connect(self.run_clean_orphans)
         self.cache_tab.refresh_requested.connect(self.refresh_cache_info)
         self.cache_tab.status_msg.connect(self.set_status_message)
+        self.cache_mgr.cache_info_ready.connect(self.cache_tab.update_cache_info)
         self.tabs.addTab(self.cache_tab, self.tr("🧹 Limpieza"))
 
-        # Tab 6: Configuración
+        # Tab 5: Configuración
         self.settings_tab = SettingsTab(self.config_mgr)
         self.settings_tab.status_msg.connect(self.set_status_message)
         self.tabs.addTab(self.settings_tab, self.tr("⚙️ Configuración"))
@@ -92,17 +86,18 @@ class MainWindow(QMainWindow):
         self.set_status_message(self.tr("Aplicaciones y librerías recomendadas por la Arch Wiki"))
 
         layout.addWidget(self.tabs)
+        
+        # Refresco inicial de caché al iniciar la aplicación
+        self.refresh_cache_info()
 
     def set_status_message(self, message):
         self.statusBar().showMessage(message, 30000)  # Muestra el mensaje por 30 segundos
 
     def _on_tab_changed(self, index):
-        if self.tabs.widget(index) == self.suggestions_tab:
-            self.set_status_message(self.tr("Aplicaciones y librerías recomendadas por la Arch Wiki"))
+        if self.tabs.widget(index) == self.explore_tab:
+            self.set_status_message(self.tr("Explorar sugerencias y buscar paquetes en repositorios oficiales y AUR"))
         elif self.tabs.widget(index) == self.updates_tab:
             self.set_status_message(self.tr("Actualizaciones disponibles para el sistema"))
-        elif self.tabs.widget(index) == self.search_tab:
-            self.set_status_message(self.tr("Buscar paquetes en repositorios oficiales y AUR e instalarlos fácilmente"))
         elif self.tabs.widget(index) == self.installed_tab:
             self.set_status_message(self.tr("Lista de paquetes instalados en el sistema"))
         elif self.tabs.widget(index) == self.cache_tab:
@@ -287,8 +282,7 @@ class MainWindow(QMainWindow):
 
         self._refresh_updates_state()
         self.installed_tab.refresh_view()
-        self.suggestions_tab.refresh_view()
-        self.search_tab.refresh_view()
+        self.explore_tab.refresh_view()
         self.cache_tab.refresh_view()
 
     def _refresh_updates_state(self):
@@ -303,8 +297,7 @@ class MainWindow(QMainWindow):
         self.tray.set_update_count(self.updates_tab.get_update_count())
 
     def refresh_cache_info(self):
-        info = self.cache_mgr.get_cache_info_sync()
-        self.cache_tab.update_cache_info(info)
+        self.cache_mgr.get_cache_info()
 
     def refresh_all(self):
         """Actualiza todos los tabs con opcional de yield entre operaciones para UI responsive."""

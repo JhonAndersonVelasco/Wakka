@@ -1,8 +1,10 @@
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
-                             QTableWidgetItem, QPushButton, QHeaderView, QCheckBox,
-                             QAbstractItemView, QMessageBox, QLineEdit, QLabel)
-from PyQt6.QtCore import pyqtSignal, Qt, QThread, QCoreApplication
+from PyQt6.QtCore import pyqtSignal, Qt, QThread, QCoreApplication, QTimer
 from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QHeaderView, QCheckBox,
+    QTableWidgetItem, QMessageBox, QLineEdit, QLabel
+)
+from gui.widgets import PackageTable
 
 class InstalledWorker(QThread):
     finished = pyqtSignal(list)
@@ -37,22 +39,47 @@ class InstalledTab(QWidget):
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(15)
 
         # Header
         header = QHBoxLayout()
-        header.addWidget(QLabel(self.tr("<h2>Aplicaciones instaladas</h2>")))
+        header.setContentsMargins(0, 0, 0, 10)
+        
+        title_layout = QVBoxLayout()
+        title_label = QLabel(self.tr("Aplicaciones instaladas"))
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: palette(text);")
+        title_layout.addWidget(title_label)
+        
+        self.count_label = QLabel(self.tr("Cargando..."))
+        self.count_label.setStyleSheet("color: gray; font-size: 12px;")
+        title_layout.addWidget(self.count_label)
+        header.addLayout(title_layout)
+
+        header.addStretch()
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText(self.tr("Filtrar instaladas..."))
-        self.search_input.textChanged.connect(self.filter_packages)
+        self.search_input.setFixedHeight(35)
+        self.search_input.setFixedWidth(300)
+        self.search_input.setStyleSheet("padding-left: 10px; border-radius: 6px;")
+        
+        # Timer para búsqueda con debounce (evita lag al escribir)
+        self.search_timer = QTimer()
+        self.search_timer.setSingleShot(True)
+        self.search_timer.timeout.connect(self.filter_packages)
+        
+        self.search_input.textChanged.connect(self._on_search_text_changed)
         header.addWidget(self.search_input)
 
         refresh_btn = QPushButton("Refrescar")
         refresh_btn.setIcon(QIcon.fromTheme("view-refresh"))
+        refresh_btn.setFixedHeight(35)
         refresh_btn.clicked.connect(self.load_packages)
         header.addWidget(refresh_btn)
 
         self.remove_selected_btn = QPushButton("🗑️ Desinstalar seleccionados")
+        self.remove_selected_btn.setFixedHeight(35)
         self.remove_selected_btn.setEnabled(False)
         self.remove_selected_btn.clicked.connect(self.on_remove_selected)
         header.addWidget(self.remove_selected_btn)
@@ -60,7 +87,7 @@ class InstalledTab(QWidget):
         layout.addLayout(header)
 
         # Tabla
-        self.table = QTableWidget()
+        self.table = PackageTable()
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels([
             "", self.tr("Nombre"), self.tr("Versión"), self.tr("Tamaño"), self.tr("Instalado el"), self.tr("Acciones")
@@ -70,8 +97,7 @@ class InstalledTab(QWidget):
         header_view.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         header_view.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
 
-        self.table.setSortingEnabled(True)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.enter_pressed.connect(self._on_table_enter)
         layout.addWidget(self.table)
 
         self.loading_label = QLabel(self.tr("Cargando paquetes instalados...")) # Etiqueta de carga inicial
@@ -95,6 +121,7 @@ class InstalledTab(QWidget):
     def on_loading_finished(self, packages):
         self.packages = packages # Almacenar los paquetes cargados
         self.loading_label.hide() # Ocultar mensaje de carga
+        self.count_label.setText(self.tr("{0} paquetes instalados").format(len(packages)))
         self.status_msg.emit(self.tr("Paquetes instalados cargados")) # Limpiar barra de estado después de 3 segundos
         self.update_table(self.packages)
 
@@ -164,9 +191,13 @@ class InstalledTab(QWidget):
 
             self.table.setCellWidget(i, 5, actions_widget)
 
-        self.table.setSortingEnabled(True)
         self.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
         self.update_selection_status()
+
+    def _on_table_enter(self, row):
+        name_item = self.table.item(row, 1)
+        if name_item:
+            self.confirm_remove(name_item.text())
 
     def update_selection_status(self):
         selected_count = 0
@@ -192,11 +223,15 @@ class InstalledTab(QWidget):
             if reply == QMessageBox.StandardButton.Yes:
                 self.remove_selected.emit(selected)
 
-    def filter_packages(self, text):
-        search_text = text.lower()
+    def _on_search_text_changed(self, text):
+        # Reiniciar el timer cada vez que el usuario escribe
+        self.search_timer.start(300)
+
+    def filter_packages(self):
+        text = self.search_input.text().lower()
         filtered = [
             p for p in self.packages 
-            if search_text in p.name.lower() or (p.description and search_text in p.description.lower())
+            if text in p.name.lower() or (p.description and text in p.description.lower())
         ]
         self.update_table(filtered)
 
@@ -211,4 +246,6 @@ class InstalledTab(QWidget):
             self.remove_package.emit(package_name)
 
     def refresh_view(self):
+        self.search_input.clear()
+        self.search_input.setFocus()
         self.load_packages()

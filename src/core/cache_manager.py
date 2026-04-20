@@ -6,7 +6,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 from pathlib import Path
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, pyqtSignal, QThread
 
 PACMAN_CACHE = Path("/var/cache/pacman/pkg/")
 YAY_CACHE = Path.home() / ".cache" / "yay"
@@ -51,16 +51,48 @@ class CacheInfo:
     def total_size_str(self) -> str:
         return fmt_size(self.total_size)
 
+class CacheInfoWorker(QObject):
+    finished = pyqtSignal(object)
+
+    def run(self):
+        info = CacheInfo()
+        self.finished.emit(info)
+
 class CacheManager(QObject):
     cache_info_ready = pyqtSignal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._cache_helper = "/usr/bin/wakka-cache-helper"
+        self._worker_thread = None
 
     def get_cache_info(self):
-        self.cache_info_ready.emit(CacheInfo())
+        """Inicia el cálculo de tamaños de caché en segundo plano"""
+        try:
+            if self._worker_thread and self._worker_thread.isRunning():
+                return
+        except RuntimeError:
+            # El objeto C++ subyacente fue eliminado por deleteLater
+            self._worker_thread = None
+
+        self._worker_thread = QThread()
+        self._worker = CacheInfoWorker()
+        self._worker.moveToThread(self._worker_thread)
         
+        self._worker_thread.started.connect(self._worker.run)
+        self._worker.finished.connect(self.on_worker_finished)
+        self._worker.finished.connect(self._worker_thread.quit)
+        self._worker_thread.finished.connect(self._worker_thread.deleteLater)
+        self._worker_thread.finished.connect(self._clear_worker_thread)
+        
+        self._worker_thread.start()
+
+    def _clear_worker_thread(self):
+        self._worker_thread = None
+
+    def on_worker_finished(self, info):
+        self.cache_info_ready.emit(info)
+
     def get_cache_info_sync(self):
         return CacheInfo()
 

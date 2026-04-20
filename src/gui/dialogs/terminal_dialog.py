@@ -1,4 +1,5 @@
 import os
+import signal
 import subprocess
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QProgressBar, QMessageBox
@@ -34,7 +35,7 @@ class TerminalDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Wakka - {0}").format(command_description))
         self.setModal(True)
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(1000, 600)
         self.process = process
         self.operation_succeeded = False
         self.setup_ui()
@@ -137,33 +138,30 @@ class TerminalDialog(QDialog):
     def cancel_operation(self):
         if self.process and self.process.poll() is None:
             try:
-                self.process.terminate()
-                self.append_output(self.tr("\n⚠️ Operación cancelada por el usuario"))
-            except PermissionError:
-                self.append_output(self.tr("\n⚠️ La operación requiere privilegios de root para ser cancelada."))
-                self.append_output(self.tr("Iniciando solicitud de cancelación con privilegios..."))
+                # Intentar matar el grupo de procesos completo (gracias a start_new_session=True)
+                pgid = os.getpgid(self.process.pid)
+                os.killpg(pgid, signal.SIGTERM)
                 
-                try:
-                    # Intentar matar el proceso usando el ayudante para usar la política de Wakka
-                    result = subprocess.run(
-                        ["pkexec", "/usr/bin/wakka-helper", "kill", str(self.process.pid)],
-                        capture_output=True,
-                        text=True,
-                        check=True
-                    )
-                    self.append_output(self.tr("\n✅ Operación cancelada exitosamente con privilegios."))
-                except subprocess.CalledProcessError as e:
-                    error_msg = e.stderr if e.stderr else e.stdout
-                    self.append_output(self.tr("\n❌ Error al cancelar: {0}").format(error_msg.strip()))
-                    return
-                except Exception as e:
-                    self.append_output(self.tr("\n❌ No se pudo cancelar la operación: {0}").format(e))
-                    return
+                # Dar un momento y forzar si es necesario
+                QTimer.singleShot(2000, lambda: self._ensure_killed(pgid))
+                
+                self.append_output(self.tr("\n⚠️ Operación cancelada por el usuario (enviada señal de término)"))
+            except Exception as e:
+                self.append_output(self.tr("\n❌ Error al intentar cancelar: {0}").format(e))
             
             # Actualizar estado de la operación y UI
             self.operation_succeeded = False
             self.cancel_btn.setEnabled(False)
             self.close_btn.setEnabled(True)
+
+    def _ensure_killed(self, pgid):
+        """Asegura que el grupo de procesos esté muerto usando SIGKILL si es necesario"""
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass # Ya terminó
+        except Exception:
+            pass
 
     def closeEvent(self, event):
         if self.process and self.process.poll() is None:

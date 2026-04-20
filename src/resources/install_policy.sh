@@ -8,10 +8,12 @@ cd "$SCRIPT_DIR"
 POLICY_FILE="com.wakka.package-manager.policy"
 POLICY_CLEAN_FILE="com.wakka.package-cleaner.policy"
 POLICY_SERVICE_FILE="com.wakka.service-manager.policy"
+POLICY_BACKGROUND_FILE="com.wakka.package-background.policy"
 POLICY_DIR="/usr/share/polkit-1/actions"
 HELPER_SCRIPT="wakka-helper"
 HELPER_CLEAN_SCRIPT="wakka-cache-helper"
 HELPER_SERVICE_SCRIPT="wakka-service-helper"
+HELPER_BACKGROUND_SCRIPT="wakka-background-helper"
 HELPER_DIR="/usr/bin"
 
 echo "=== Instalador de política PolicyKit para Wakka ==="
@@ -36,6 +38,11 @@ fi
 
 if [ ! -f "$POLICY_SERVICE_FILE" ]; then
     echo "❌ Error: No se encuentra $POLICY_SERVICE_FILE"
+    exit 1
+fi
+
+if [ ! -f "$POLICY_BACKGROUND_FILE" ]; then
+    echo "❌ Error: No se encuentra $POLICY_BACKGROUND_FILE"
     exit 1
 fi
 
@@ -77,6 +84,14 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+echo "📋 Creando link para helper de fondo en $HELPER_DIR/$HELPER_BACKGROUND_SCRIPT"
+sudo ln -sf "$HELPER_DIR/$HELPER_SCRIPT" "$HELPER_DIR/$HELPER_BACKGROUND_SCRIPT"
+
+if [ $? -ne 0 ]; then
+    echo "❌ Error al crear link de helper de fondo"
+    exit 1
+fi
+
 # Instalar política
 echo "📋 Instalando política en $POLICY_DIR/$POLICY_FILE"
 sudo cp "$POLICY_FILE" "$POLICY_DIR/"
@@ -97,6 +112,14 @@ fi
 echo "📋 Instalando política de servicios en $POLICY_DIR/$POLICY_SERVICE_FILE"
 sudo cp "$POLICY_SERVICE_FILE" "$POLICY_DIR/"
 
+if [ $? -ne 0 ]; then
+    echo "❌ Error al instalar la política de servicios"
+    exit 1
+fi
+
+echo "📋 Instalando política de fondo en $POLICY_DIR/$POLICY_BACKGROUND_FILE"
+sudo cp "$POLICY_BACKGROUND_FILE" "$POLICY_DIR/"
+
 if [ $? -eq 0 ]; then
     echo "✅ Instalación completada correctamente"
     echo
@@ -106,6 +129,7 @@ if [ $? -eq 0 ]; then
     echo "  'Se requiere autenticacion para ejecutar limpieza de paquetes'"
     echo "y para configurar la actualización al apagar:"
     echo "  'Se requiere autenticacion para configurar la actualizacion al apagar'"
+    echo "y las operaciones de fondo serán silenciosas."
     echo "en lugar del comando completo"
 else
     echo "❌ Error al instalar la política"

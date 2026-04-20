@@ -3,26 +3,94 @@
 # Este script es llamado por pkexec para ejecutar operaciones de yay
 
 ACTION="$1"
-shift  # Remover el primer argumento, el resto son paquetes
+
+ACTION="$1"
+
+run_yay_with_elevation() {
+    local REAL_UID="$1"
+    local REAL_USER
+    REAL_USER=$(id -nu "$REAL_UID")
+    local REAL_HOME
+    REAL_HOME=$(getent passwd "$REAL_UID" | cut -d: -f6)
+    shift
+    
+    local SUDOERS_FILE="/etc/sudoers.d/wakka-temp-$REAL_USER"
+    
+    # Crear regla temporal de sudoers para que yay no pida contraseña al llamar a pacman
+    echo "$REAL_USER ALL=(ROOT) NOPASSWD: /usr/bin/pacman" > "$SUDOERS_FILE"
+    chmod 440 "$SUDOERS_FILE"
+    
+    # Limpieza al salir
+    trap "rm -f $SUDOERS_FILE" EXIT INT TERM
+
+    # Ejecutar yay como usuario real
+    sudo -u "$REAL_USER" /usr/bin/yay "$@" --builddir "$REAL_HOME/.cache/yay"
+
+    rm -f "$SUDOERS_FILE"
+    trap - EXIT INT TERM
+}
 
 case "$ACTION" in
+    pk-sudo)
+        shift
+        # Puente privilegiado (mantenido por compatibilidad si algo lo usa)
+        "$@"
+        ;;
     install)
-        /usr/bin/yay -S --noconfirm --needed "$@"
+        REAL_UID=$PKEXEC_UID
+        if [ -n "$REAL_UID" ]; then
+            run_yay_with_elevation "$REAL_UID" -S --noconfirm --needed "${@:2}"
+        else
+            shift
+            /usr/bin/yay -S --noconfirm --needed "$@"
+        fi
         ;;
     remove)
-        /usr/bin/yay -Rns --noconfirm "$@"
+        REAL_UID=$PKEXEC_UID
+        if [ -n "$REAL_UID" ]; then
+            run_yay_with_elevation "$REAL_UID" -Rns --noconfirm "${@:2}"
+        else
+            shift
+            /usr/bin/yay -Rns --noconfirm "$@"
+        fi
         ;;
     update)
-        /usr/bin/yay -Syu --noconfirm "$@"
+        REAL_UID=$PKEXEC_UID
+        if [ -n "$REAL_UID" ]; then
+            run_yay_with_elevation "$REAL_UID" -Syu --noconfirm "${@:2}"
+        else
+            shift
+            /usr/bin/yay -Syu --noconfirm "$@"
+        fi
         ;;
     install-local)
+        shift
         /usr/bin/yay -U --noconfirm "$@"
         ;;
     clean)
+        shift
         /usr/bin/yay -Yc --noconfirm "$@"
         ;;
     refresh)
         /usr/bin/yay -Sy --noconfirm
+        ;;
+    download)
+        REAL_UID=$PKEXEC_UID
+        if [ -n "$REAL_UID" ]; then
+            if [ $# -le 1 ]; then
+                run_yay_with_elevation "$REAL_UID" -Syuw --noconfirm
+            else
+                run_yay_with_elevation "$REAL_UID" -Sy --noconfirm
+                run_yay_with_elevation "$REAL_UID" -Sw --noconfirm "${@:2}"
+            fi
+        else
+            shift
+            if [ $# -eq 0 ]; then
+                /usr/bin/yay -Syuw --noconfirm
+            else
+                /usr/bin/yay -Sw --noconfirm "$@"
+            fi
+        fi
         ;;
     unlock)
         /usr/bin/rm -f /var/lib/pacman/db.lck

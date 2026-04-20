@@ -39,6 +39,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         },
     },
     "shutdown_updates": False,
+    "background_download": True,
     "notifications": True,
     "parallel_downloads": 5,
 }

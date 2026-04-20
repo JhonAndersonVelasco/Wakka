@@ -228,9 +228,14 @@
 </context><context>
     <name>InstalledTab</name>
     <message>
-        <location filename="../gui/tabs/installed_tab.py" line="43" />
-        <source>&lt;h2&gt;Aplicaciones instaladas&lt;/h2&gt;</source>
-        <translation>&lt;h2&gt;Aplicaciones instaladas&lt;/h2&gt;</translation>
+        <location filename="../gui/tabs/installed_tab.py" line="46" />
+        <source>Aplicaciones instaladas</source>
+        <translation>Aplicaciones instaladas</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/installed_tab.py" line="50" />
+        <source>{0} paquetes instalados</source>
+        <translation>{0} paquetes instalados</translation>
     </message>
     <message>
         <location filename="../gui/tabs/installed_tab.py" line="46" />
@@ -1308,14 +1313,19 @@ Reinicia Wakka para aplicarlos.</translation>
 </context><context>
     <name>UpdatesTab</name>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="24" />
-        <source>&lt;h2&gt;Actualizaciones disponibles&lt;/h2&gt;</source>
-        <translation>&lt;h2&gt;Actualizaciones disponibles&lt;/h2&gt;</translation>
+        <location filename="../gui/tabs/updates_tab.py" line="45" />
+        <source>Actualizaciones disponibles</source>
+        <translation>Actualizaciones disponibles</translation>
     </message>
     <message>
-        <location filename="../gui/tabs/updates_tab.py" line="26" />
-        <source>(0 paquetes)</source>
-        <translation>(0 paquetes)</translation>
+        <location filename="../gui/tabs/updates_tab.py" line="49" />
+        <source>Buscando actualizaciones...</source>
+        <translation>Buscando actualizaciones...</translation>
+    </message>
+    <message>
+        <location filename="../gui/tabs/updates_tab.py" line="60" />
+        <source>Próximo chequeo:</source>
+        <translation>Próximo chequeo:</translation>
     </message>
     <message>
         <location filename="../gui/tabs/updates_tab.py" line="31" />

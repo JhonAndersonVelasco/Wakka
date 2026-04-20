@@ -156,11 +156,8 @@ class SettingsTab(QWidget):
 
         gf.addLayout(code_row)
 
-        self._trans_status = QLabel("")
-        self._trans_status.setStyleSheet(style_subtitle(11))
-        gf.addWidget(self._trans_status)
-
-        gf.addSpacing(15)
+        # Añadimos un pequeño stretch al final de la sección General para que no se expanda
+        gf.addStretch()
 
         # ── Actualizaciones ──
         updates = QGroupBox(self.tr("Actualizaciones"))
@@ -171,8 +168,6 @@ class SettingsTab(QWidget):
         self._notif_chk.stateChanged.connect(
             lambda s: self._config.set("notifications", s == Qt.CheckState.Checked.value)
         )
-        uf.addRow(self._notif_chk)
-
         self._shutdown_chk = QCheckBox(self.tr("Instalar al apagar el equipo"))
         self._shutdown_chk.setToolTip(
             self.tr("Requiere habilitar el servicio systemd wakka-shutdown.service. "
@@ -180,15 +175,25 @@ class SettingsTab(QWidget):
                     "si yay no puede ejecutarse sin interacción, hará fallback a paquetes oficiales.")
         )
         self._shutdown_chk.stateChanged.connect(self._on_shutdown_updates)
-        self._shutd_status = QLabel("")
-        self._shutd_status.setStyleSheet(style_subtitle(11))
 
-        shut_layout = QVBoxLayout()
-        shut_layout.setContentsMargins(0, 0, 0, 0)
-        shut_layout.setSpacing(0)
-        shut_layout.addWidget(self._shutdown_chk)
-        shut_layout.addWidget(self._shutd_status)
-        uf.addRow(shut_layout)
+        self._bg_download_chk = QCheckBox(self.tr("Descargar actualizaciones en segundo plano"))
+        self._bg_download_chk.setToolTip(
+            self.tr("Inicia la descarga de paquetes automáticamente cuando se detectan actualizaciones. "
+                    "Esto hace que la instalación sea mucho más rápida.")
+        )
+        self._bg_download_chk.stateChanged.connect(
+            lambda s: self._config.set("background_download", s == Qt.CheckState.Checked.value)
+        )
+
+        # Agrupamos todos los elementos de control en un solo VBox sin anidados para evitar gaps
+        chk_vbox = QVBoxLayout()
+        chk_vbox.setContentsMargins(0, 0, 0, 0)
+        chk_vbox.setSpacing(2) # Espaciado muy estrecho para los checks
+        chk_vbox.addWidget(self._notif_chk)
+        chk_vbox.addWidget(self._shutdown_chk)
+        chk_vbox.addWidget(self._bg_download_chk)
+
+        uf.addRow(chk_vbox)
 
         self._update_freq = QComboBox()
         self._update_freq.setView(QListView())
@@ -262,10 +267,6 @@ class SettingsTab(QWidget):
         self._custom_repos.setToolTip(self.tr("Añade las cabeceras de tus repositorios. Omite [core], [extra] y [multilib]."))
         self._custom_repos.setFixedHeight(120)
 
-        self._pacman_status = QLabel("")
-        self._pacman_status.setStyleSheet(style_subtitle(11))
-        self._pacman_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
         pacman_btn_layout = QHBoxLayout()
         pacman_btn_layout.addStretch()
         self._apply_pacman_btn = QPushButton(self.tr("Aplicar todo en pacman.conf"))
@@ -279,11 +280,15 @@ class SettingsTab(QWidget):
         pf.addWidget(self._ignore_input)
         pf.addWidget(repos_lbl)
         pf.addWidget(self._custom_repos)
-        pf.addWidget(self._pacman_status)
+        # pacman_status was here
         pf.addLayout(pacman_btn_layout)
 
-        inner.addWidget(general)
-        inner.addWidget(updates)
+        top_layout = QHBoxLayout()
+        top_layout.setSpacing(20)
+        top_layout.addWidget(general)
+        top_layout.addWidget(updates)
+
+        inner.addLayout(top_layout)
         inner.addWidget(pacman)
         inner.addStretch()
 
@@ -360,13 +365,13 @@ class SettingsTab(QWidget):
         self._shutdown_chk.setChecked(self._config.get("shutdown_updates", False))
         self._shutdown_chk.blockSignals(False)
 
-    def _set_status(self, label: QLabel, text: str, status_type: str, timeout_ms: int = 30000):
-        """Muestra un mensaje de estado temporal en el label indicado."""
-        label.setText(text)
-        label.setStyleSheet(style_status(status_type, 11))
-        # Tras el tiempo indicado, borramos el texto si no ha sido cambiado por otro mensaje
-        QTimer.singleShot(timeout_ms, lambda: label.setText("") if label.text() == text else None)
-        if text:  # Evita emitir strings vacíos a la barra
+        self._bg_download_chk.blockSignals(True)
+        self._bg_download_chk.setChecked(self._config.get("background_download", True))
+        self._bg_download_chk.blockSignals(False)
+
+    def _set_status(self, text: str, status_type: str = "info"):
+        """Emite un mensaje de estado a la barra de estado."""
+        if text:
             self.status_msg.emit(text)
 
     def _on_theme_changed(self, idx):
@@ -521,7 +526,7 @@ class SettingsTab(QWidget):
     def _generate_ts(self):
         code = self._trans_code.text().strip().lower()
         if not code:
-            self._set_status(self._trans_status, self.tr("⛔ Ingresa un código (ej. fr)"), "danger")
+            self._set_status(self.tr("⛔ Ingresa un código (ej. fr)"), "danger")
             return
 
         root = Path(__file__).resolve().parent.parent.parent
@@ -533,13 +538,13 @@ class SettingsTab(QWidget):
             cmd = ["pylupdate6"] + [str(p) for p in root.rglob("*.py")] + ["-ts", str(out_file)]
             process = subprocess.run(cmd, capture_output=True, text=True)
             if process.returncode == 0:
-                self._set_status(self._trans_status, self.tr("✓ Plantilla creada: {0}").format(out_file.name), "success")
+                self._set_status(self.tr("✓ Plantilla creada: {0}").format(out_file.name), "success")
                 self._load_languages_list()
                 self._open_linguist_code(code)
             else:
-                self._set_status(self._trans_status, self.tr("Error: {0}").format(process.stderr.strip()), "danger")
+                self._set_status(self.tr("Error: {0}").format(process.stderr.strip()), "danger")
         except FileNotFoundError:
-            self._set_status(self._trans_status, self.tr("⛔ Falta pylupdate6 (instala python-pyqt6 o pyqt6-tools)"), "danger")
+            self._set_status(self.tr("⛔ Falta pylupdate6 (instala python-pyqt6 o pyqt6-tools)"), "danger")
 
     def _open_linguist_code(self, code: str):
         i18n_dir = Path(__file__).resolve().parent.parent.parent / "i18n"
@@ -549,7 +554,7 @@ class SettingsTab(QWidget):
 
         if not ts_file.exists():
             status_msg = self.tr("⛔ El archivo .ts no existe.")
-            self._set_status(self._trans_status, status_msg, "danger")
+            self._set_status(status_msg, "danger")
             return
 
         dialog = TranslationEditorDialog(str(ts_file), self)
@@ -570,9 +575,9 @@ class SettingsTab(QWidget):
                  self._config.set("language", "auto")
 
             self._load_languages_list()
-            self._set_status(self._trans_status, self.tr("✓ Idioma {0} eliminado.").format(code), "success")
+            self._set_status(self.tr("✓ Idioma {0} eliminado.").format(code), "success")
         except Exception as e:
-            self._set_status(self._trans_status, self.tr("Error borrando: {0}").format(e), "danger")
+            self._set_status(self.tr("Error borrando: {0}").format(e), "danger")
 
     def _import_translation(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -584,31 +589,31 @@ class SettingsTab(QWidget):
             dest.parent.mkdir(exist_ok=True)
             try:
                 shutil.copy(src, dest)
-                self._set_status(self._trans_status, self.tr("✓ Importado: {0}").format(src.name), "success")
+                self._set_status(self.tr("✓ Importado: {0}").format(src.name), "success")
                 self._load_languages_list()
                 if dest.suffix == ".ts":
                     self._open_linguist_code(dest.stem.replace("wakka_", ""))
             except Exception as e:
-                self._set_status(self._trans_status, self.tr("Error importando: {0}").format(e), "danger")
+                self._set_status(self.tr("Error importando: {0}").format(e), "danger")
 
     def _compile_translations(self):
         root = Path(__file__).resolve().parent.parent.parent
         i18n_dir = root / "i18n"
         ts_files = list(i18n_dir.glob("*.ts"))
         if not ts_files:
-            self._set_status(self._trans_status, self.tr("No hay archivos .ts en i18n/"), "danger")
+            self._set_status(self.tr("No hay archivos .ts en i18n/"), "danger")
             return
 
         try:
             cmd = ["lrelease"] + [str(f) for f in ts_files]
             process = subprocess.run(cmd, capture_output=True, text=True)
             if process.returncode == 0:
-                self._set_status(self._trans_status, self.tr("✓ {0} idioma(s) compilado(s)").format(len(ts_files)), "success")
+                self._set_status(self.tr("✓ {0} idioma(s) compilado(s)").format(len(ts_files)), "success")
                 self._load_languages_list()
             else:
-                self._set_status(self._trans_status, self.tr("Error compilando: {0}").format(process.stderr.strip()), "danger")
+                self._set_status(self.tr("Error compilando: {0}").format(process.stderr.strip()), "danger")
         except FileNotFoundError:
-            self._set_status(self._trans_status, self.tr("⛔ Falta lrelease (instala qt6-tools)"), "danger")
+            self._set_status(self.tr("⛔ Falta lrelease (instala qt6-tools)"), "danger")
 
     # ─── Other Setting Management Methods ─────────────────────────────────────
 
@@ -764,16 +769,15 @@ class SettingsTab(QWidget):
         ok, msg = self._config.set_shutdown_updates(enabled)
         if ok:
             status_msg = self.tr("Servicio habilitado ✓") if enabled else self.tr("Servicio deshabilitado")
-            self._set_status(self._shutd_status, status_msg, "success")
+            self._set_status(status_msg, "success")
         else:
             if msg == "Cancelled":
                 # Si se canceló, revertimos el estado del checkbox sin mostrar error
                 self._shutdown_chk.blockSignals(True)
                 self._shutdown_chk.setChecked(not enabled)
                 self._shutdown_chk.blockSignals(False)
-                self._shutd_status.setText("")
             else:
-                self._set_status(self._shutd_status, self.tr("Error: {0}").format(msg), "danger")
+                self._set_status(self.tr("Error: {0}").format(msg), "danger")
         
         if ok:
             self.shutdown_updates_changed.emit(enabled)
@@ -792,8 +796,8 @@ class SettingsTab(QWidget):
         ok, msg = self._config.apply_pacman_conf_changes(parallel, actual_color, ignore_pkgs, custom_repos)
 
         if ok:
-            self._set_status(self._pacman_status, self.tr("Guardado correctamente en pacman.conf ✓"), "success")
+            self._set_status(self.tr("Guardado correctamente en pacman.conf ✓"), "success")
         elif msg == "Cancelled":
-            self._set_status(self._pacman_status, self.tr("Operación cancelada por el usuario."), "info")
+            self._set_status(self.tr("Operación cancelada por el usuario."), "info")
         else:
-            self._set_status(self._pacman_status, self.tr("Error al guardar: {0}").format(msg), "danger")
+            self._set_status(self.tr("Error al guardar: {0}").format(msg), "danger")

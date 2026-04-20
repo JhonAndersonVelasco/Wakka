@@ -329,25 +329,32 @@ class YayWrapper:
 
     def refresh_databases(self) -> subprocess.Popen:
         """Sincroniza las bases de datos de los repositorios (requiere root)"""
-        return subprocess.Popen(["pkexec", "/usr/bin/wakka-helper", "refresh"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        return subprocess.Popen(["pkexec", "/usr/bin/wakka-background-helper", "refresh"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
 
     def install(self, packages: List[str]) -> subprocess.Popen:
         """Instala paquetes (retorna proceso para terminal)"""
         cmd = ["pkexec", "/usr/bin/wakka-helper", "install"] + packages
-        return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
 
     def remove(self, packages: List[str]) -> subprocess.Popen:
         """Desinstala paquetes"""
         cmd = ["pkexec", "/usr/bin/wakka-helper", "remove"] + packages
-        return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
 
     def update_system(self) -> subprocess.Popen:
         """Actualiza todo el sistema"""
-        return subprocess.Popen(["pkexec", "/usr/bin/wakka-helper", "update"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        return subprocess.Popen(["pkexec", "/usr/bin/wakka-helper", "update"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+
+    def download_updates(self, packages: List[str] = None) -> subprocess.Popen:
+        """Descarga actualizaciones sin instalarlas (yay -Sw)"""
+        cmd = ["pkexec", "/usr/bin/wakka-background-helper", "download"]
+        if packages:
+            cmd += packages
+        return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
 
     def install_local_package(self, file_path: str) -> subprocess.Popen:
         """Instala paquete .pkg.tar.zst local"""
-        return subprocess.Popen(["pkexec", "/usr/bin/wakka-helper", "install-local", file_path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        return subprocess.Popen(["pkexec", "/usr/bin/wakka-helper", "install-local", file_path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
 
     def clean_cache(self, orphans: bool = False) -> subprocess.Popen:
         """Limpia caché de paquetes y/o huérfanos."""
@@ -357,6 +364,7 @@ class YayWrapper:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
+                start_new_session=True
             )
         else:
             # Limpiar caché de AUR de forma segura, sin shell ni globbing

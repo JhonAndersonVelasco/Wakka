@@ -31,18 +31,7 @@ def style_status(status_type: str, size: int) -> str:
     colors = {"success": "#4CAF50", "danger": "#f44336", "info": "#2196F3"}
     return f"font-size: {size}px; color: {colors.get(status_type, 'gray')};"
 
-class CacheWorker(QThread):
-    finished = pyqtSignal(list)
-    status_msg = pyqtSignal(str)
 
-    def __init__(self, yay_wrapper):
-        super().__init__()
-        self.yay = yay_wrapper
-
-    def run(self):
-        self.status_msg.emit(QCoreApplication.translate("InstalledWorker", "Administrar el caché de paquetes..."))
-        packages = self.yay.get_installed_packages()
-        self.finished.emit(packages)
 
 class CacheTab(QWidget):
     clean_pacman_requested     = pyqtSignal(int)
@@ -236,8 +225,14 @@ class CacheTab(QWidget):
         self._status = QLabel("")
         self._status.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        layout.addWidget(overview)
-        layout.addWidget(sched_group)
+        # Agrupamos Caché del sistema y Programación lado a lado
+        top_row = QHBoxLayout()
+        top_row.setSpacing(20)
+        top_row.addWidget(overview)
+        top_row.addWidget(sched_group)
+        top_row.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        layout.addLayout(top_row)
         layout.addWidget(pacman_group)
         layout.addWidget(aur_group)
         layout.addWidget(orphan_group)

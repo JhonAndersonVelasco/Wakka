@@ -1,8 +1,10 @@
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
-                             QTableWidgetItem, QCheckBox, QPushButton, QLabel,
-                             QHeaderView, QAbstractItemView)
 from PyQt6.QtCore import Qt, pyqtSignal, QCoreApplication, QThread
 from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QPushButton, QLabel,
+    QHeaderView, QTableWidgetItem
+)
+from gui.widgets import PackageTable
 
 class UpdatesWorker(QThread):
     finished = pyqtSignal(list)
@@ -33,28 +35,60 @@ class UpdatesTab(QWidget):
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(15)
 
         # Header
         header = QHBoxLayout()
-        header.addWidget(QLabel(self.tr("<h2>Actualizaciones disponibles</h2>")))
+        header.setContentsMargins(0, 0, 0, 10)
+        
+        title_layout = QVBoxLayout()
+        title_label = QLabel(self.tr("Actualizaciones disponibles"))
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: palette(text);")
+        title_layout.addWidget(title_label)
+        
+        self.count_label = QLabel(self.tr("Buscando actualizaciones..."))
+        self.count_label.setStyleSheet("color: gray; font-size: 12px;")
+        title_layout.addWidget(self.count_label)
+        header.addLayout(title_layout)
 
-        self.count_label = QLabel(self.tr("(0 paquetes)"))
-        header.addWidget(self.count_label)
         header.addStretch()
+
+        # Timer Countdown
+        timer_container = QWidget()
+        timer_layout = QVBoxLayout(timer_container)
+        timer_layout.setContentsMargins(0, 0, 0, 0)
+        timer_layout.setSpacing(2)
+        
+        timer_title = QLabel(self.tr("Próximo chequeo:"))
+        timer_title.setStyleSheet("font-size: 10px; color: gray; text-transform: uppercase;")
+        timer_title.setAlignment(Qt.AlignmentFlag.AlignRight)
+        timer_layout.addWidget(timer_title)
+        
+        self.countdown_label = QLabel("--:--")
+        self.countdown_label.setStyleSheet("font-size: 14px; font-weight: bold; font-family: monospace; color: #2196F3;")
+        self.countdown_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        timer_layout.addWidget(self.countdown_label)
+        header.addWidget(timer_container)
+        
+        header.addSpacing(20)
         
         # Botones
         self.btn_refresh = QPushButton(self.tr("Refrescar"))
         self.btn_refresh.setIcon(QIcon.fromTheme("view-refresh"))
+        self.btn_refresh.setFixedHeight(35)
         self.btn_refresh.clicked.connect(self.refresh_requested.emit)
         header.addWidget(self.btn_refresh)
 
         self.btn_update_all = QPushButton(self.tr("Actualizar todo"))
+        self.btn_update_all.setFixedHeight(35)
         self.btn_update_all.setStyleSheet("""
             QPushButton {
                 background-color: #4CAF50;
                 color: white;
-                padding: 8px 16px;
+                padding: 0 16px;
                 border-radius: 4px;
+                font-weight: bold;
             }
             QPushButton:hover { background-color: #45a049; }
         """)
@@ -62,13 +96,14 @@ class UpdatesTab(QWidget):
         header.addWidget(self.btn_update_all)
 
         self.btn_update_selected = QPushButton(self.tr("Actualizar seleccionados"))
+        self.btn_update_selected.setFixedHeight(35)
         self.btn_update_selected.clicked.connect(self.on_update_selected)
         header.addWidget(self.btn_update_selected)
 
         layout.addLayout(header)
 
         # Tabla
-        self.table = QTableWidget()
+        self.table = PackageTable()
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels([
             "", self.tr("Nombre"), self.tr("V. Actual"), self.tr("V. Nueva"), self.tr("Acciones")
@@ -79,8 +114,7 @@ class UpdatesTab(QWidget):
         header_view.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         header_view.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
 
-        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.table.setAlternatingRowColors(True)
+        self.table.enter_pressed.connect(self._on_table_enter)
         layout.addWidget(self.table)
 
         self.load_updates()
@@ -156,6 +190,11 @@ class UpdatesTab(QWidget):
         
         self.updates_updated.emit(self.packages)
 
+    def _on_table_enter(self, row):
+        name_item = self.table.item(row, 1)
+        if name_item:
+            self.install_selected.emit([name_item.text()])
+
     def set_packages(self, packages):
         """Permite actualizar la lista de paquetes desde una fuente externa (ej. Tray)"""
         # Solo actualizamos si no hay un worker ya trabajando para evitar colisiones
@@ -190,3 +229,6 @@ class UpdatesTab(QWidget):
 
     def refresh_view(self):
         self.load_updates()
+
+    def set_countdown(self, time_str):
+        self.countdown_label.setText(time_str)
