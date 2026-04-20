@@ -312,8 +312,14 @@ class ConfigManager:
             autostart_dir.mkdir(parents=True, exist_ok=True)
             content = f"""[Desktop Entry]
 Name=Wakka (tray)
-Comment=Wakka package manager system tray monitor
-Comment[es]=Monitor de bandeja de sistema de Wakka
+Comment=Moderno gestor gráfico de paquetes para Arch Linux con integración de IA
+Comment[en]=Modern graphical package manager for Arch Linux with AI integration
+Comment[de]=Moderner grafischer Paketmanager für Arch Linux mit KI-Integration
+Comment[fr]=Gestionnaire de paquets graphique moderne pour Arch Linux avec intégration d'IA
+Comment[it]=Gestore di pacchetti grafico moderno per Arch Linux con integrazione dell'intelligenza artificiale
+Comment[ru]=Современный графический менеджер пакетов для Arch Linux с интеграцией ИИ
+Comment[jp]=AIを統合したArch Linux向けの最新グラフィカルパッケージマネージャー
+Comment[cn]=适用于 Arch Linux 的现代图形化软件包管理器，集成了 AI 技术
 Exec={cmd}
 Icon=wakka
 Terminal=false
