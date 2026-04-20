@@ -450,6 +450,33 @@
         <translation>La aplicación se ha minimizado a la bandeja del sistema</translation>
     </message>
     <message>
+        <location filename="../gui/main_window.py" line="310" />
+        <source>Salir de Wakka</source>
+        <translation>Salir de Wakka</translation>
+    </message>
+    <message>
+        <location filename="../gui/main_window.py" line="312" />
+        <source>¿Cerrar Wakka?</source>
+        <translation>¿Cerrar Wakka?</translation>
+    </message>
+    <message>
+        <location filename="../gui/main_window.py" line="314" />
+        <source>Si cierras Wakka suspenderás las actualizaciones y limpiezas automáticas del sistema.
+Puedes minimizarlo a la bandeja para que continúe trabajando en segundo plano.</source>
+        <translation>Si cierras Wakka suspenderás las actualizaciones y limpiezas automáticas del sistema.
+Puedes minimizarlo a la bandeja para que continúe trabajando en segundo plano.</translation>
+    </message>
+    <message>
+        <location filename="../gui/main_window.py" line="319" />
+        <source>Cerrar Wakka</source>
+        <translation>Cerrar Wakka</translation>
+    </message>
+    <message>
+        <location filename="../gui/main_window.py" line="320" />
+        <source>Minimizar a bandeja</source>
+        <translation>Minimizar a bandeja</translation>
+    </message>
+    <message>
         <source>Instalaciones automáticas</source>
         <translation type="vanished">Instalaciones automáticas</translation>
     </message>

@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QGroupBox, QComboBox, QCheckBox,
     QSpinBox, QLineEdit, QScrollArea, QFrame,
-    QFormLayout, QListView, QButtonGroup, QRadioButton,
+    QFormLayout, QListView,
     QFileDialog, QMessageBox, QApplication, QTextEdit
 )
 
@@ -113,32 +113,32 @@ class SettingsTab(QWidget):
         t_info.setStyleSheet(style_subtitle(12) + " margin-bottom: 4px;")
         gf.addWidget(t_info)
 
-        header_row = QHBoxLayout()
-        header_row.setContentsMargins(0, 0, 0, 0)
-        lbl_act = QLabel(self.tr("Activo"))
-        lbl_act.setFixedWidth(50)
-        lbl_lang = QLabel(self.tr("Idioma"))
-        lbl_lang.setFixedWidth(130)
-        lbl_c = QLabel(self.tr("Código"))
-        lbl_c.setFixedWidth(50)
-        lbl_act.setStyleSheet(style_label(11))
-        lbl_lang.setStyleSheet(style_label(11))
-        lbl_c.setStyleSheet(style_label(11))
-        header_row.addWidget(lbl_act)
-        header_row.addWidget(lbl_lang)
-        header_row.addWidget(lbl_c)
-        header_row.addStretch()
-        gf.addLayout(header_row)
+        # ── Selector de idioma tipo combo ──
+        lang_row = QHBoxLayout()
+        lang_row.setContentsMargins(0, 0, 0, 0)
+        lang_row.setSpacing(8)
 
-        self._lang_list_widget = QWidget()
-        self._lang_list_layout = QVBoxLayout(self._lang_list_widget)
-        self._lang_list_layout.setContentsMargins(0, 0, 0, 0)
-        self._lang_list_layout.setSpacing(4)
+        self._lang_combo = QComboBox()
+        self._lang_combo.setView(QListView())
+        self._lang_combo.setMinimumWidth(280)
+        self._lang_combo.setFixedHeight(34)
+        self._lang_combo.currentIndexChanged.connect(self._handle_restart_setting_change)
+        lang_row.addWidget(self._lang_combo)
 
-        self._lang_group = QButtonGroup(self)
-        self._lang_group.buttonClicked.connect(self._handle_restart_setting_change)
+        self._lang_edit_btn = QPushButton("✎")
+        self._lang_edit_btn.setFixedSize(34, 34)
+        self._lang_edit_btn.setToolTip(self.tr("Editar en Qt Linguist"))
+        self._lang_edit_btn.clicked.connect(self._on_edit_current_lang)
+        lang_row.addWidget(self._lang_edit_btn)
 
-        gf.addWidget(self._lang_list_widget)
+        self._lang_del_btn = QPushButton("🗑️")
+        self._lang_del_btn.setFixedSize(34, 34)
+        self._lang_del_btn.setToolTip(self.tr("Eliminar traducción local"))
+        self._lang_del_btn.clicked.connect(self._on_delete_current_lang)
+        lang_row.addWidget(self._lang_del_btn)
+
+        lang_row.addStretch()
+        gf.addLayout(lang_row)
         gf.addSpacing(8)
 
         code_row = QHBoxLayout()
@@ -388,11 +388,14 @@ class SettingsTab(QWidget):
         # 1. Obtener valores nuevos
         idx = self._theme_combo.currentIndex()
         cur_theme = "system" if idx == 0 else ("dark" if idx == 1 else "light")
-        
+
         cur_lang = self._initial_lang
-        btn = self._lang_group.checkedButton()
-        if btn is not None:
-             cur_lang = btn.property("lang_code")
+        combo_data = self._lang_combo.currentData()
+        if combo_data:
+            cur_lang = combo_data
+
+        # Actualizar botones de acción según el idioma seleccionado
+        self._update_lang_actions(cur_lang)
 
         # 2. Comprobar si realmente ha cambiado algo
         if cur_theme == self._initial_theme and cur_lang == self._initial_lang:
@@ -404,7 +407,7 @@ class SettingsTab(QWidget):
 
         # 4. Forzar el reinicio
         reply = QMessageBox.question(
-            self, self.tr("Cambio realizado"), 
+            self, self.tr("Cambio realizado"),
             self.tr("Para aplicar el nuevo tema o idioma, es necesario reiniciar Wakka.\n\n"
                     "¿Deseas reiniciar el programa ahora?"),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
@@ -413,21 +416,15 @@ class SettingsTab(QWidget):
             QProcess.startDetached(sys.executable, sys.argv)
             QApplication.quit()
         else:
-            # Si no quieren reiniciar ahora, actualizamos el estado inicial 
-            # para no volver a pedirlo en este mismo cambio.
             self._initial_theme = cur_theme
             self._initial_lang = cur_lang
 
     # ─── Language Management Methods ──────────────────────────────────────────
 
     def _load_languages_list(self):
-        for i in reversed(range(self._lang_list_layout.count())):
-            w = self._lang_list_layout.itemAt(i).widget()
-            if w:
-                w.deleteLater()
-
-        for btn in self._lang_group.buttons():
-            self._lang_group.removeButton(btn)
+        """Puebla el combo de idiomas con nombre nativo, código y tipo."""
+        self._lang_combo.blockSignals(True)
+        self._lang_combo.clear()
 
         i18n_dir = Path(__file__).resolve().parent.parent.parent / "i18n"
         langs = set()
@@ -442,86 +439,85 @@ class SettingsTab(QWidget):
                 if code != "template":
                     langs.add(code)
 
-        # Definimos el orden fijo para los idiomas principales
         fixed_order = ["auto", "es_ES", "en_US", "es", "en"]
-        
-        # Filtramos los que falten de los encontrados (langs)
         discovered = sorted([l for l in langs if l not in fixed_order])
-        
-        # Combinamos: fijos (que existan en langs o sean auto) + el resto
         all_langs = []
         for code in fixed_order:
             if code == "auto" or code in langs:
                 all_langs.append(code)
-        
         all_langs.extend(discovered)
-        
+
         for code in all_langs:
-            row = self._make_lang_row(code, code == self._initial_lang, i18n_dir)
-            self._lang_list_layout.addWidget(row)
+            label, tooltip = self._build_lang_item(code, i18n_dir)
+            self._lang_combo.addItem(label, userData=code)
+            idx = self._lang_combo.count() - 1
+            self._lang_combo.setItemData(idx, tooltip, Qt.ItemDataRole.ToolTipRole)
 
-    def _make_lang_row(self, code: str, is_active: bool, i18n_dir: Path) -> QWidget:
-        w = QWidget()
-        layout = QHBoxLayout(w)
-        layout.setContentsMargins(0, 0, 0, 0)
+        # Seleccionar el idioma activo
+        active = self._initial_lang
+        for i in range(self._lang_combo.count()):
+            if self._lang_combo.itemData(i) == active:
+                self._lang_combo.setCurrentIndex(i)
+                break
 
-        rb = QRadioButton()
-        rb.setChecked(is_active)
-        rb.setProperty("lang_code", code)
-        self._lang_group.addButton(rb)
-        rb.setFixedWidth(50)
+        self._lang_combo.blockSignals(False)
+        self._update_lang_actions(active)
 
-        name = self.tr("Sistema") if code == "auto" else (QLocale(code).nativeLanguageName().title() or code)
-        lbl_name = QLabel(f"<b>{name}</b>")
-        lbl_name.setStyleSheet(style_text("text_primary"))
-        lbl_name.setFixedWidth(130)
+    def _build_lang_item(self, code: str, i18n_dir: Path):
+        """Devuelve (label_text, tooltip) para un código de idioma."""
+        BUILTIN = ["auto", "es", "en", "es_ES", "en_US"]
 
-        lbl_code = QLabel(code)
-        lbl_code.setStyleSheet(style_label(11))
-        lbl_code.setFixedWidth(50)
-
-        layout.addWidget(rb)
-        layout.addWidget(lbl_name)
-        layout.addWidget(lbl_code)
-
-        has_ts = (i18n_dir / f"wakka_{code}.ts").exists() or (i18n_dir / f"{code}.ts").exists()
-        has_qm = (i18n_dir / f"wakka_{code}.qm").exists() or (i18n_dir / f"{code}.qm").exists()
-
-        if code not in ["auto", "es", "en", "es_ES", "en_US"]:
-            status_text = ""
-            if has_qm and has_ts: status_text = self.tr("[Integrado]")
-            elif has_ts: status_text = self.tr("[En Progreso]")
-            elif has_qm: status_text = self.tr("[Binario]")
-
-            s_lbl = QLabel(status_text)
-            s_lbl.setStyleSheet(style_accent_label(10))
-            layout.addWidget(s_lbl)
-            layout.addStretch()
-
-            edit_btn = QPushButton("✎")
-            edit_btn.setFixedSize(28, 28)
-            edit_btn.setToolTip(self.tr("Editar en Qt Linguist"))
-            if has_ts:
-                edit_btn.clicked.connect(lambda _, c=code: self._open_linguist_code(c))
-            else:
-                edit_btn.setEnabled(False)
-            layout.addWidget(edit_btn)
-
-            del_btn = QPushButton("❌")
-            del_btn.setFixedSize(28, 28)
-            del_btn.setToolTip(self.tr("Eliminar traducción local"))
-            del_btn.clicked.connect(lambda _, c=code: self._remove_translation(c))
-            layout.addWidget(del_btn)
+        if code == "auto":
+            name = self.tr("Automático (sistema)")
+            badge = "🌐"
+            type_label = self.tr("Sistema")
+            tooltip = self.tr("Usa el idioma configurado en el sistema operativo")
         else:
-            is_native = code in ["es", "en"]
-            s_text = self.tr("[Nativo]") if is_native else self.tr("[Sistema]")
-            s_lbl = QLabel(s_text)
-            s_lbl.setStyleSheet(style_accent_label(10))
-            s_lbl.setFixedWidth(60)
-            layout.addWidget(s_lbl)
-            layout.addStretch()
+            locale = QLocale(code)
+            native = locale.nativeLanguageName().title()
+            name = native if native else code
+            has_ts = (i18n_dir / f"{code}.ts").exists() or (i18n_dir / f"wakka_{code}.ts").exists()
+            has_qm = (i18n_dir / f"{code}.qm").exists() or (i18n_dir / f"wakka_{code}.qm").exists()
 
-        return w
+            if code in BUILTIN:
+                badge = "⭐"
+                type_label = self.tr("Incluido")
+                tooltip = self.tr("Traducción oficial incluida con Wakka")
+            elif has_qm and has_ts:
+                badge = "✅"
+                type_label = self.tr("Personalizado")
+                tooltip = self.tr("Traducción comunitaria compilada y lista")
+            elif has_ts:
+                badge = "🔧"
+                type_label = self.tr("En progreso")
+                tooltip = self.tr("Traducción parcial sin compilar (.ts sin .qm)")
+            else:
+                badge = "📦"
+                type_label = self.tr("Binario")
+                tooltip = self.tr("Solo binario compilado (.qm), sin fuentes")
+
+        label = f"{badge}  {name}   [{code}]   {type_label}"
+        return label, tooltip
+
+    def _update_lang_actions(self, code: str):
+        """Activa/desactiva los botones de editar y eliminar según el idioma."""
+        BUILTIN = ["auto", "es", "en", "es_ES", "en_US"]
+        is_custom = code not in BUILTIN
+        i18n_dir = Path(__file__).resolve().parent.parent.parent / "i18n"
+        has_ts = (i18n_dir / f"{code}.ts").exists() or (i18n_dir / f"wakka_{code}.ts").exists()
+
+        self._lang_edit_btn.setEnabled(is_custom and has_ts)
+        self._lang_del_btn.setEnabled(is_custom)
+
+    def _on_edit_current_lang(self):
+        code = self._lang_combo.currentData()
+        if code:
+            self._open_linguist_code(code)
+
+    def _on_delete_current_lang(self):
+        code = self._lang_combo.currentData()
+        if code:
+            self._remove_translation(code)
 
     def _generate_ts(self):
         code = self._trans_code.text().strip().lower()

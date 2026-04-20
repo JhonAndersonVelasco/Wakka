@@ -82,6 +82,7 @@ class UpdatesTab(QWidget):
 
         self.btn_update_all = QPushButton(self.tr("Actualizar todo"))
         self.btn_update_all.setFixedHeight(35)
+        self.btn_update_all.setIcon(QIcon.fromTheme("software-update-available"))
         self.btn_update_all.setStyleSheet("""
             QPushButton {
                 background-color: #4CAF50;
@@ -97,6 +98,7 @@ class UpdatesTab(QWidget):
 
         self.btn_update_selected = QPushButton(self.tr("Actualizar seleccionados"))
         self.btn_update_selected.setFixedHeight(35)
+        self.btn_update_selected.setIcon(QIcon.fromTheme("system-software-update"))
         self.btn_update_selected.clicked.connect(self.on_update_selected)
         header.addWidget(self.btn_update_selected)
 

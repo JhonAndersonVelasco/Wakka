@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QApplication, QMessageBox
 from PyQt6.QtCore import QTimer, pyqtSignal
+from PyQt6.QtGui import QIcon
 
 from core.yay_wrapper import YayWrapper
 from core.system_tray import TrayIcon
@@ -304,10 +305,43 @@ class MainWindow(QMainWindow):
         self._refresh_after_package_change()
 
     def quit_application(self):
-        self.tray.tray.hide()
-        QApplication.quit()
+        """Solicita confirmación antes de salir completamente."""
+        reply = QMessageBox(self)
+        reply.setWindowTitle(self.tr("Salir de Wakka"))
+        reply.setWindowIcon(QIcon.fromTheme("application-exit"))
+        reply.setText(self.tr("¿Cerrar Wakka?"))
+        reply.setInformativeText(
+            self.tr("Si cierras Wakka suspenderás las actualizaciones y limpiezas automáticas del sistema.\n"
+                    "Puedes minimizarlo a la bandeja para que continúe trabajando en segundo plano.")
+        )
+        reply.setIcon(QMessageBox.Icon.Warning)
+
+        btn_quit   = reply.addButton(self.tr("Cerrar Wakka"),       QMessageBox.ButtonRole.DestructiveRole)
+        btn_tray   = reply.addButton(self.tr("Minimizar a bandeja"), QMessageBox.ButtonRole.AcceptRole)
+        btn_cancel = reply.addButton(self.tr("Cancelar"),            QMessageBox.ButtonRole.RejectRole)
+
+        btn_quit.setIcon(QIcon.fromTheme("application-exit"))
+        btn_tray.setIcon(QIcon.fromTheme("go-down"))
+        btn_cancel.setIcon(QIcon.fromTheme("dialog-cancel"))
+
+        reply.setDefaultButton(btn_tray)
+        reply.exec()
+
+        clicked = reply.clickedButton()
+        if clicked == btn_quit:
+            self.tray.tray.hide()
+            QApplication.quit()
+        elif clicked == btn_tray:
+            self.hide()
+            if self.config_mgr.get("notifications", True):
+                self.tray.show_notification(
+                    self.tr("Wakka sigue ejecutándose"),
+                    self.tr("La aplicación se ha minimizado a la bandeja del sistema")
+                )
+        # Si canceló, no hace nada
 
     def closeEvent(self, event):
+        """Cerrar la ventana = minimizar a bandeja (comportamiento normal)."""
         event.ignore()
         self.hide()
         if self.config_mgr.get("notifications", True):
