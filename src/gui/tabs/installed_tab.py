@@ -1,10 +1,10 @@
-from PyQt6.QtCore import pyqtSignal, Qt, QThread, QCoreApplication, QTimer, QDateTime
+from PyQt6.QtCore import pyqtSignal, Qt, QThread, QCoreApplication, QTimer
 from PyQt6.QtGui import QIcon, QColor
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QHeaderView, QCheckBox,
     QTableWidgetItem, QMessageBox, QLineEdit, QLabel
 )
-from gui.widgets import PackageTable
+from gui.widgets import PackageTable, make_checkbox_widget
 from datetime import datetime
 
 class InstalledWorker(QThread):
@@ -21,14 +21,12 @@ class InstalledWorker(QThread):
         self.finished.emit(packages)
 
 class NumericTableWidgetItem(QTableWidgetItem):
-    """Item de tabla que se ordena numéricamente usando UserRole"""
     def __lt__(self, other):
         if isinstance(other, QTableWidgetItem):
             return self.data(Qt.ItemDataRole.UserRole) < other.data(Qt.ItemDataRole.UserRole)
         return super().__lt__(other)
 
 class DateTableWidgetItem(QTableWidgetItem):
-    """Item de tabla que se ordena por fecha usando UserRole"""
     def __lt__(self, other):
         if isinstance(other, QTableWidgetItem):
             return self.data(Qt.ItemDataRole.UserRole) < other.data(Qt.ItemDataRole.UserRole)
@@ -43,6 +41,8 @@ class InstalledTab(QWidget):
     def __init__(self, yay_wrapper, parent=None):
         super().__init__(parent)
         self.yay = yay_wrapper
+        self.packages = []
+        self.selected_packages = set()  # Almacena nombres de paquetes seleccionados
         self.setup_ui()
 
     def setup_ui(self):
@@ -50,7 +50,6 @@ class InstalledTab(QWidget):
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(15)
 
-        # Header
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 10)
         
@@ -72,7 +71,6 @@ class InstalledTab(QWidget):
         self.search_input.setFixedWidth(300)
         self.search_input.setStyleSheet("padding-left: 10px; border-radius: 6px;")
         
-        # Timer para búsqueda con debounce (evita lag al escribir)
         self.search_timer = QTimer()
         self.search_timer.setSingleShot(True)
         self.search_timer.timeout.connect(self.filter_packages)
@@ -83,7 +81,7 @@ class InstalledTab(QWidget):
         refresh_btn = QPushButton("Refrescar")
         refresh_btn.setIcon(QIcon.fromTheme("view-refresh"))
         refresh_btn.setFixedHeight(35)
-        refresh_btn.clicked.connect(self.load_packages)
+        refresh_btn.clicked.connect(self.refresh_view)
         header.addWidget(refresh_btn)
 
         self.remove_selected_btn = QPushButton("🗑️ Desinstalar seleccionados")
@@ -94,7 +92,6 @@ class InstalledTab(QWidget):
 
         layout.addLayout(header)
 
-        # Tabla
         self.table = PackageTable()
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels([
@@ -118,6 +115,7 @@ class InstalledTab(QWidget):
         self.load_packages()
 
     def load_packages(self):
+        self.selected_packages.clear() # Reset de selección al cargar de nuevo
         self.table.setRowCount(0)
         self.loading_label.show()
         self.status_msg.emit(self.tr("Cargando paquetes instalados..."))
@@ -135,7 +133,6 @@ class InstalledTab(QWidget):
         self.update_table(self.packages)
 
     def _parse_size_to_bytes(self, size_str):
-        """Convierte '1723,94 KiB' o '9.87 MiB' a un float para ordenar"""
         try:
             s = size_str.replace(',', '.')
             parts = s.split()
@@ -148,95 +145,65 @@ class InstalledTab(QWidget):
             return 0
 
     def _parse_date_to_timestamp(self, date_str):
-        """Convierte string de fecha a timestamp para ordenar"""
         if not date_str or date_str == "-":
             return 0
-        
-        try:
-            # Formatos comunes: "2024-01-15", "15/01/2024", "Jan 15 2024", etc.
-            date_formats = [
-                "%Y-%m-%d",
-                "%d/%m/%Y",
-                "%d-%m-%Y",
-                "%Y/%m/%d",
-                "%b %d %Y",
-                "%d %b %Y",
-                "%B %d %Y",
-                "%d %B %Y",
-                "%Y-%m-%d %H:%M:%S",
-                "%d/%m/%Y %H:%M:%S",
-            ]
-            
-            for fmt in date_formats:
-                try:
-                    dt = datetime.strptime(date_str.strip(), fmt)
-                    return int(dt.timestamp())
-                except ValueError:
-                    continue
-            
-            return 0
-        except:
-            return 0
+        date_formats = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%b %d %Y", "%d %b %Y", "%B %d %Y", "%d %B %Y", "%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M:%S"]
+        for fmt in date_formats:
+            try:
+                dt = datetime.strptime(date_str.strip(), fmt)
+                return int(dt.timestamp())
+            except ValueError:
+                continue
+        return 0
 
     def update_table(self, packages):
         self.table.setSortingEnabled(False)
         self.table.setRowCount(len(packages))
 
         for i, pkg in enumerate(packages):
-            # Checkbox
-            cb = QCheckBox()
-            cb.stateChanged.connect(self.update_selection_status)
-            container = QWidget()
-            cb_layout = QHBoxLayout(container)
-            cb_layout.addWidget(cb)
-            cb_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            cb_layout.setContentsMargins(0, 0, 0, 0)
+            # Checkbox usando el helper de widgets.py
+            container, cb = make_checkbox_widget(
+                callback=lambda state, name=pkg.name: self._toggle_selection(name, state),
+                parent=self.table
+            )
+            # Restaurar estado si ya estaba seleccionado
+            if pkg.name in self.selected_packages:
+                cb.setChecked(True)
+            
             self.table.setCellWidget(i, 0, container)
 
-            # Nombre + Tooltip
             name_item = QTableWidgetItem(pkg.name)
             name_item.setToolTip(pkg.description or self.tr("Paquete instalado en el sistema"))
             self.table.setItem(i, 1, name_item)
 
             self.table.setItem(i, 2, QTableWidgetItem(pkg.version))
 
-            # Tamaño de instalación (Ordenable)
             size_item = NumericTableWidgetItem(pkg.size)
-            size_bytes = self._parse_size_to_bytes(pkg.size)
-            size_item.setData(Qt.ItemDataRole.UserRole, size_bytes)
+            size_item.setData(Qt.ItemDataRole.UserRole, self._parse_size_to_bytes(pkg.size))
             self.table.setItem(i, 3, size_item)
 
-            # Fecha de instalación (Ordenable)
             install_date_item = DateTableWidgetItem(pkg.install_date)
-            install_timestamp = self._parse_date_to_timestamp(pkg.install_date)
-            install_date_item.setData(Qt.ItemDataRole.UserRole, install_timestamp)
+            install_date_item.setData(Qt.ItemDataRole.UserRole, self._parse_date_to_timestamp(pkg.install_date))
             self.table.setItem(i, 4, install_date_item)
 
-            # Último uso (Ordenable)
             last_used_text = pkg.last_used if pkg.last_used else self.tr("-")
             last_used_item = DateTableWidgetItem(last_used_text)
-            last_used_timestamp = self._parse_date_to_timestamp(pkg.last_used) if pkg.last_used else 0
-            last_used_item.setData(Qt.ItemDataRole.UserRole, last_used_timestamp)
+            last_used_item.setData(Qt.ItemDataRole.UserRole, self._parse_date_to_timestamp(pkg.last_used) if pkg.last_used else 0)
             if not pkg.last_used:
-                last_used_item.setToolTip(self.tr("Sin ejecutables detectados o no usado desde la instalación"))
                 last_used_item.setForeground(QColor("gray"))
             self.table.setItem(i, 5, last_used_item)
 
-            # Acciones
             actions_widget = QWidget()
             actions_layout = QHBoxLayout(actions_widget)
             actions_layout.setContentsMargins(2, 0, 2, 0)
             actions_layout.setSpacing(4)
-            actions_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             info_btn = QPushButton("ℹ️")
             info_btn.setFixedWidth(30)
-            info_btn.setToolTip(self.tr("Preguntar a Google sobre este paquete"))
             info_btn.clicked.connect(lambda checked, p=pkg: self.show_info.emit(p.name, p.description))
             actions_layout.addWidget(info_btn)
 
             remove_btn = QPushButton(self.tr("Desinstalar"))
-            remove_btn.setToolTip(self.tr("Desinstalar"))
             remove_btn.setStyleSheet("background-color: #f44336; color: white;")
             remove_btn.clicked.connect(lambda checked, p=pkg.name: self.confirm_remove(p))
             actions_layout.addWidget(remove_btn)
@@ -245,36 +212,37 @@ class InstalledTab(QWidget):
 
         self.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
         self.table.setSortingEnabled(True)
-        self.update_selection_status()
+        self._update_ui_selection_count()
+
+    def _toggle_selection(self, package_name, state):
+        """Maneja la persistencia del set de seleccionados"""
+        if state == 2: # Checked
+            self.selected_packages.add(package_name)
+        else: # Unchecked
+            self.selected_packages.discard(package_name)
+        self._update_ui_selection_count()
+
+    def _update_ui_selection_count(self):
+        count = len(self.selected_packages)
+        self.remove_selected_btn.setEnabled(count > 0)
+        self.remove_selected_btn.setText(self.tr("🗑️ Desinstalar seleccionados ({0})").format(count))
 
     def _on_table_enter(self, row):
         name_item = self.table.item(row, 1)
         if name_item:
             self.confirm_remove(name_item.text())
 
-    def update_selection_status(self):
-        selected_count = 0
-        for i in range(self.table.rowCount()):
-            container = self.table.cellWidget(i, 0)
-            if container and container.findChild(QCheckBox).isChecked():
-                selected_count += 1
-        self.remove_selected_btn.setEnabled(selected_count > 0)
-        self.remove_selected_btn.setText(self.tr("🗑️ Desinstalar seleccionados ({0})").format(selected_count))
-
     def on_remove_selected(self):
-        selected = []
-        for i in range(self.table.rowCount()):
-            container = self.table.cellWidget(i, 0)
-            if container and container.findChild(QCheckBox).isChecked():
-                selected.append(self.table.item(i, 1).text())
-
-        if selected:
+        if self.selected_packages:
             reply = QMessageBox.question(
-                self, self.tr("Confirmar"), self.tr("¿Desinstalar {0} paquetes?").format(len(selected)),
+                self, self.tr("Confirmar"), self.tr("¿Desinstalar {0} paquetes?").format(len(self.selected_packages)),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
             if reply == QMessageBox.StandardButton.Yes:
-                self.remove_selected.emit(selected)
+                # Emitimos la lista y limpiamos el set
+                selected_list = list(self.selected_packages)
+                self.remove_selected.emit(selected_list)
+                self.selected_packages.clear()
 
     def _on_search_text_changed(self, text):
         self.search_timer.start(300)
@@ -289,9 +257,7 @@ class InstalledTab(QWidget):
 
     def confirm_remove(self, package_name):
         reply = QMessageBox.question(
-            self,
-            self.tr("Confirmar desinstalación"),
-            self.tr("¿Deseas desinstalar {0}?").format(package_name),
+            self, self.tr("Confirmar desinstalación"), self.tr("¿Deseas desinstalar {0}?").format(package_name),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         if reply == QMessageBox.StandardButton.Yes:
@@ -299,5 +265,5 @@ class InstalledTab(QWidget):
 
     def refresh_view(self):
         self.search_input.clear()
-        self.search_input.setFocus()
+        self.selected_packages.clear() # Limpiar selección al refrescar manualmente
         self.load_packages()

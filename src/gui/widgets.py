@@ -5,7 +5,6 @@ from PyQt6.QtWidgets import QWidget, QHBoxLayout, QCheckBox, QTableWidget, QAbst
 from PyQt6.QtCore import Qt, pyqtSignal
 from typing import Callable, Optional
 
-
 class PackageTable(QTableWidget):
     """
     Tabla personalizada para paquetes que maneja atajos de teclado y 
@@ -36,7 +35,6 @@ class PackageTable(QTableWidget):
                 self.enter_pressed.emit(row)
         else:
             super().keyPressEvent(event)
-
 
 def make_checkbox_widget(
     callback: Optional[Callable] = None,

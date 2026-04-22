@@ -3,15 +3,40 @@ Wakka — Config Manager
 Manages /etc/pacman.conf (via sudo) and ~/.config/wakka/settings.json.
 """
 from __future__ import annotations
+
 import json
+import logging
 import re
-import tempfile
+import shutil
 import subprocess
 import sys
+import tempfile
+import time
 from pathlib import Path
 from typing import Any
 
+logger = logging.getLogger(__name__)
+
 PACMAN_CONF = Path("/etc/pacman.conf")
+
+# Repository section headers shipped / documented as Arch official or common testing repos.
+OFFICIAL_PACMAN_SECTIONS: frozenset[str] = frozenset({
+    "[options]",
+    "[core]",
+    "[extra]",
+    "[community]",
+    "[multilib]",
+    "[core-testing]",
+    "[extra-testing]",
+    "[community-testing]",
+    "[multilib-testing]",
+    "[testing]",
+    "[staging]",
+    "[community-staging]",
+    "[multilib-staging]",
+    "[kde-unstable]",
+    "[gnome-unstable]",
+})
 SETTINGS_DIR = Path.home() / ".config" / "wakka"
 SETTINGS_FILE = SETTINGS_DIR / "settings.json"
 
@@ -53,14 +78,25 @@ class ConfigManager:
     def _load_settings(self) -> dict:
         if SETTINGS_FILE.exists():
             try:
-                data = json.loads(SETTINGS_FILE.read_text())
+                data = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
                 return _deep_merge(DEFAULT_SETTINGS.copy(), data)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("No se pudo leer la configuración (%s): %s", SETTINGS_FILE, e)
+                corrupt_backup = SETTINGS_FILE.with_name(
+                    f"{SETTINGS_FILE.stem}.corrupt.{int(time.time())}{SETTINGS_FILE.suffix}"
+                )
+                try:
+                    shutil.copy2(SETTINGS_FILE, corrupt_backup)
+                    logger.info("Copia de seguridad del JSON dañado: %s", corrupt_backup)
+                except OSError as copy_err:
+                    logger.warning("No se pudo respaldar el archivo de configuración: %s", copy_err)
         return DEFAULT_SETTINGS.copy()
 
     def save(self):
-        SETTINGS_FILE.write_text(json.dumps(self._settings, indent=2, ensure_ascii=False))
+        SETTINGS_FILE.write_text(
+            json.dumps(self._settings, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
 
     def get(self, key: str, default=None) -> Any:
         keys = key.split(".")
@@ -198,20 +234,19 @@ class ConfigManager:
             return ""
         content = PACMAN_CONF.read_text()
         
-        officials = ['[options]', '[core]', '[extra]', '[multilib]', '[core-testing]', '[extra-testing]', '[multilib-testing]']
         lines = content.split('\n')
-        
+
         custom_lines = []
         is_custom = False
-        
+
         for line in lines:
             stripped = line.strip()
             if stripped.startswith('[') and stripped.endswith(']'):
-                if stripped in officials:
+                if stripped in OFFICIAL_PACMAN_SECTIONS:
                     is_custom = False
                 else:
                     is_custom = True
-            
+
             if is_custom:
                 custom_lines.append(line)
                 
@@ -223,19 +258,17 @@ class ConfigManager:
             
         content = PACMAN_CONF.read_text()
         lines = content.split('\n')
-        officials = ['[options]', '[core]', '[extra]', '[multilib]', '[core-testing]', '[extra-testing]', '[multilib-testing]']
-        
         new_lines = []
         is_official = True
-        
+
         for line in lines:
             stripped = line.strip()
             if stripped.startswith('[') and stripped.endswith(']'):
-                if stripped in officials:
+                if stripped in OFFICIAL_PACMAN_SECTIONS:
                     is_official = True
                 else:
                     is_official = False
-                    
+
             if is_official:
                 new_lines.append(line)
                 
@@ -281,13 +314,12 @@ class ConfigManager:
             
         # 4. Custom Repositories
         lines = content.split('\n')
-        officials = ['[options]', '[core]', '[extra]', '[multilib]', '[core-testing]', '[extra-testing]', '[multilib-testing]']
         new_lines = []
         is_official = True
         for line in lines:
             stripped = line.strip()
             if stripped.startswith('[') and stripped.endswith(']'):
-                is_official = stripped in officials
+                is_official = stripped in OFFICIAL_PACMAN_SECTIONS
             if is_official:
                 new_lines.append(line)
         while new_lines and new_lines[-1].strip() == "":

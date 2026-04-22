@@ -1,10 +1,9 @@
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QApplication, QMessageBox
-from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtGui import QIcon
 
 from core.yay_wrapper import YayWrapper
 from core.system_tray import TrayIcon
-from core.google_client import GoogleClient
+from core.package_info_client import PackageInfoClient
 from core.config_manager import ConfigManager
 from core.cache_manager import CacheManager
 from gui.tabs.explore_tab import ExploreTab
@@ -21,7 +20,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1200, 800)
 
         self.yay = YayWrapper()
-        self.google = GoogleClient()
+        self.package_info = PackageInfoClient()
         self.config_mgr = ConfigManager()
         self.cache_mgr = CacheManager(self)
         self.tray = TrayIcon(self.yay, self.config_mgr, self.cache_mgr, self)
@@ -113,7 +112,6 @@ class MainWindow(QMainWindow):
         self.tray.updates_checked.connect(self.on_updates_checked)
         self.tray.show()
 
-
     def on_updates_checked(self, updates):
         """Callback cuando el tray termina de chequear actualizaciones"""
         self.updates_tab.set_packages(updates)
@@ -191,7 +189,7 @@ class MainWindow(QMainWindow):
         )
 
     def show_package_info(self, name, description):
-        self.google.explain_package(name, description)
+        self.package_info.explain_package(name, description)
 
     def run_clean_pacman(self, keep):
         process = self.cache_mgr.clean_pacman_cache(keep)
@@ -261,16 +259,16 @@ class MainWindow(QMainWindow):
         self.tray.set_busy(True)
         
         # Notifica que comienza una operación larga
-        self.statusBar().showMessage(self.tr("Iniciando: %1...").format(description), 0)
+        self.statusBar().showMessage(self.tr("Iniciando: {0}...").format(description), 0)
 
         dialog = TerminalDialog(description, process=process, parent=self)
         if dialog.exec() and dialog.operation_succeeded and on_success:
             # Notifica que finaliza con éxito y llama al callback de actualización
-            self.statusBar().showMessage(self.tr("Operación completada: %1").format(description), 3000)
+            self.statusBar().showMessage(self.tr("Operación completada: {0}").format(description), 3000)
             on_success()
         else:
             # Notifica en caso de fallo o cancelación
-            error_msg = self.tr("Error o cancelado durante la operación: %1").format(description)
+            error_msg = self.tr("Error o cancelado durante la operación: {0}").format(description)
             self.statusBar().showMessage(error_msg, 5000)
         
         self._operation_in_progress = False

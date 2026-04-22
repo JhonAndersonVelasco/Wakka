@@ -88,7 +88,7 @@ class PackageCard(QFrame):
         btn_layout = QVBoxLayout()
 
         info_btn = QPushButton(self.tr("ℹ️ Info"))
-        info_btn.setToolTip(self.tr("Preguntar a google sobre esta app"))
+        info_btn.setToolTip(self.tr("Abrir la wiki de Arch y archlinux.org (solo nombre del paquete)"))
         info_btn.clicked.connect(lambda: self.info_clicked.emit(
             self.package.name,
             self.package.description

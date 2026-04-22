@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, pyqtSignal, QLocale, QProcess, QTimer, QThread, QCoreApplication
+from PyQt6.QtCore import Qt, pyqtSignal, QLocale, QProcess, QThread, QCoreApplication
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QGroupBox, QComboBox, QCheckBox,
@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
     QFormLayout, QListView,
     QFileDialog, QMessageBox, QApplication, QTextEdit
 )
+from PyQt6.QtGui import QPainter, QColor
 
 from core.config_manager import ConfigManager
 import sys
@@ -42,6 +43,25 @@ class SettingsWorker(QThread):
         self.status_msg.emit(QCoreApplication.translate("SettingsWorker", "Cargando configuración de Wakka..."))
         packages = self.yay.get_installed_packages()
         self.finished.emit(packages)
+
+class MultiLinePlaceholderEdit(QTextEdit):
+    def __init__(self, placeholder="", parent=None):
+        super().__init__(parent)
+        self.custom_placeholder = placeholder
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        # Si el editor está vacío, dibujamos el placeholder manualmente
+        if not self.toPlainText():
+            painter = QPainter(self.viewport())
+            # Color gris típico de placeholder
+            painter.setPen(QColor(150, 150, 150))
+            
+            # Ajustamos el margen para que no choque con el borde (4px suele ser el default)
+            rect = self.viewport().rect().adjusted(5, 3, -5, -3)
+            
+            # Qt.TextWordWrap permite que el texto fluya si es muy largo
+            painter.drawText(rect, Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignTop|Qt.TextFlag.TextWordWrap, self.custom_placeholder)
 
 class SettingsTab(QWidget):
     theme_changed     = pyqtSignal(str)
@@ -262,8 +282,7 @@ class SettingsTab(QWidget):
         repos_lbl = QLabel(self.tr("Repositorios de terceros (ej: [chaotic-aur]):"))
         repos_lbl.setStyleSheet(style_text("text_primary") + " margin-top: 8px;")
         
-        self._custom_repos = QTextEdit()
-        self._custom_repos.setPlaceholderText("[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist")
+        self._custom_repos = MultiLinePlaceholderEdit("[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist")
         self._custom_repos.setToolTip(self.tr("Añade las cabeceras de tus repositorios. Omite [core], [extra] y [multilib]."))
         self._custom_repos.setFixedHeight(120)
 
@@ -468,7 +487,7 @@ class SettingsTab(QWidget):
         BUILTIN = ["auto", "es", "en", "es_ES", "en_US"]
 
         if code == "auto":
-            name = self.tr("Automático (sistema)")
+            name = self.tr("Automático")
             badge = "🌐"
             type_label = self.tr("Sistema")
             tooltip = self.tr("Usa el idioma configurado en el sistema operativo")
@@ -486,7 +505,7 @@ class SettingsTab(QWidget):
             elif has_qm and has_ts:
                 badge = "✅"
                 type_label = self.tr("Personalizado")
-                tooltip = self.tr("Traducción comunitaria compilada y lista")
+                tooltip = self.tr("Traducción comunitaria o personal compilada y lista")
             elif has_ts:
                 badge = "🔧"
                 type_label = self.tr("En progreso")

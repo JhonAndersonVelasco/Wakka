@@ -1,38 +1,21 @@
-import subprocess
-import json
+from __future__ import annotations
+
+import logging
 import os
-import re
 import random
+import re
 import shutil
-import time
-from typing import List, Dict
+import subprocess
 from dataclasses import dataclass
-import requests
-from bs4 import BeautifulSoup
+from typing import Callable, Dict, List
+
 from PyQt6.QtCore import QCoreApplication
 
-# Constantes del módulo
-WIKI_CATEGORIES: dict[str, str] = {
-    "Documents": "https://wiki.archlinux.org/title/List_of_applications/Documents",
-    "Internet": "https://wiki.archlinux.org/title/List_of_applications/Internet",
-    "Multimedia": "https://wiki.archlinux.org/title/List_of_applications/Multimedia",
-    "Science": "https://wiki.archlinux.org/title/List_of_applications/Science",
-    "Security": "https://wiki.archlinux.org/title/List_of_applications/Security",
-    "Utilities": "https://wiki.archlinux.org/title/List_of_applications/Utilities",
-    "Other": "https://wiki.archlinux.org/title/List_of_applications/Other",
-}
-WIKI_CACHE_FILE = os.path.expanduser("~/.cache/wakka/arch_wiki_apps.json")
-WIKI_CACHE_DURATION = 24 * 60 * 60  # 24 horas en segundos
+from core.arch_wiki import fetch_wiki_applications_by_category
+from core.pacman_text import parse_upgrade_line
 
-# Helper para que pylupdate6 detecte las categorías dinámicas
-def _dummy_categories_i18n():
-    QCoreApplication.translate("WikiCategories", "Documents")
-    QCoreApplication.translate("WikiCategories", "Internet")
-    QCoreApplication.translate("WikiCategories", "Multimedia")
-    QCoreApplication.translate("WikiCategories", "Science")
-    QCoreApplication.translate("WikiCategories", "Security")
-    QCoreApplication.translate("WikiCategories", "Utilities")
-    QCoreApplication.translate("WikiCategories", "Other")
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class Package:
@@ -49,97 +32,17 @@ class Package:
 
 
 class YayWrapper:
-    def __init__(self):
-        self.yay_path = "/usr/bin/yay"
-        self.pacman_path = "/usr/bin/pacman"
+    def __init__(self) -> None:
+        self.yay_path = shutil.which("yay") or "/usr/bin/yay"
+        self.pacman_path = shutil.which("pacman") or "/usr/bin/pacman"
 
     def _run(self, cmd: List[str]) -> subprocess.CompletedProcess | None:
         """Ejecuta un comando yay/pacman de forma segura y captura su salida."""
         try:
             return subprocess.run(cmd, capture_output=True, text=True, check=False)
-        except Exception as e:
-            print(f"Error ejecutando comando: {e}")
+        except OSError as e:
+            logger.error("Error ejecutando comando %s: %s", cmd, e)
             return None
-
-    def _scrape_arch_wiki_applications(self) -> dict[str, list[dict[str, str]]]:
-        """
-        Hace scraping de la Arch Wiki para obtener aplicaciones categorizadas.
-        El resultado se cachea en disco durante 24 horas para evitar peticiones repetidas.
-        """
-        os.makedirs(os.path.dirname(WIKI_CACHE_FILE), exist_ok=True)
-
-        # Verificar caché
-        if os.path.exists(WIKI_CACHE_FILE):
-            try:
-                with open(WIKI_CACHE_FILE, "r") as f:
-                    cache_data = json.load(f)
-                if time.time() - cache_data.get("timestamp", 0) < WIKI_CACHE_DURATION:
-                    print("Cargando apps de la Arch Wiki desde caché.")
-                    return cache_data.get("applications", {})
-            except json.JSONDecodeError:
-                print("Error decodificando caché de Arch Wiki, se re-hace el scraping.")
-            except Exception as e:
-                print(f"Error cargando caché de Arch Wiki: {e}, se re-hace el scraping.")
-
-        applications_by_category: dict[str, list[dict[str, str]]] = {}
-
-        for category_name, url in WIKI_CATEGORIES.items():
-            print(f"Scraping Arch Wiki categoría: {category_name}...")
-            applications_by_category[category_name] = []
-
-            try:
-                response = requests.get(url, timeout=10)
-                response.raise_for_status()
-                soup = BeautifulSoup(response.text, 'html.parser')
-
-                content_div = soup.find('div', {'class': 'mw-parser-output'})
-                if not content_div:
-                    continue
-
-                # Buscamos todas las listas en la página
-                for ul in content_div.find_all('ul'):
-                    for li in ul.find_all('li', recursive=False):
-                        app_name = ""
-                        description = ""
-
-                        # Find the bold tag which usually contains the app name
-                        b_tag = li.find('b')
-                        if b_tag:
-                            # Check if the bold tag contains a link
-                            a_tag_in_b = b_tag.find('a', href=True)
-                            if a_tag_in_b:
-                                app_name = a_tag_in_b.get_text(strip=True)
-                            else:
-                                app_name = b_tag.get_text(strip=True)
-
-                            # Evitar capturar elementos de navegación o metadatos
-                            if len(app_name) < 2 or app_name.startswith('Jump'):
-                                continue
-
-                            # Get description from siblings of the bold tag
-                            description_parts = []
-                            for sibling in b_tag.next_siblings:
-                                if sibling.name == 'ul' or sibling.name == 'li': break # Stop if we hit another list or list item
-                                if isinstance(sibling, str): description_parts.append(sibling.strip())
-                                elif sibling.name == 'span' and 'mw-editsection' not in sibling.get('class', []):
-                                    description_parts.append(sibling.get_text(strip=True))
-                            description = " ".join(filter(None, description_parts)).strip()
-                            # Clean leading separators like '—', ':', '-'
-                            description = re.sub(r'^[—:\-\s]+', '', description).strip()
-
-                            if app_name and app_name not in [a['name'] for a in applications_by_category[category_name]]:
-                                applications_by_category[category_name].append({"name": app_name, "description": description})
-            except Exception as e:
-                print(f"Error parsing category {category_name}: {e}")
-
-        # Guardar en caché
-        try:
-            with open(WIKI_CACHE_FILE, "w") as f:
-                json.dump({"timestamp": time.time(), "applications": applications_by_category}, f, indent=2)
-        except Exception as e:
-            print(f"Error guardando caché de Arch Wiki: {e}")
-
-        return applications_by_category
 
     def get_available_updates(self) -> List[Package]:
         """Obtiene lista de actualizaciones disponibles"""
@@ -154,32 +57,33 @@ class YayWrapper:
             
         if res_repo and res_repo.stdout:
             for line in res_repo.stdout.strip().splitlines():
-                m = re.match(r"(\S+)\s+(\S+)\s+->\s+(\S+)", line)
-                if m:
+                parsed = parse_upgrade_line(line)
+                if parsed:
+                    name, cur, new = parsed
                     updates.append(Package(
-                        name=m.group(1),
-                        version=m.group(3),
+                        name=name,
+                        version=new,
                         description=QCoreApplication.translate("YayWrapper", "Actualización disponible (Repo)"),
                         repo="repo",
                         installed=True,
-                        install_date=m.group(2)
+                        install_date=cur,
                     ))
                     
         # 2. AUR (yay -Qua solo muestra actualizaciones de AUR)
         res_aur = self._run([self.yay_path, "-Qua", "--color", "never"])
         if res_aur and res_aur.stdout:
             for line in res_aur.stdout.strip().splitlines():
-                m = re.match(r"(\S+)\s+(\S+)\s+->\s+(\S+)", line)
-                if m:
-                    # Evitar duplicados si por alguna razón aparecen en ambos
-                    if not any(p.name == m.group(1) for p in updates):
+                parsed = parse_upgrade_line(line)
+                if parsed:
+                    name, cur, new = parsed
+                    if not any(p.name == name for p in updates):
                         updates.append(Package(
-                            name=m.group(1),
-                            version=m.group(3),
+                            name=name,
+                            version=new,
                             description=QCoreApplication.translate("YayWrapper", "Actualización disponible (AUR)"),
                             repo="aur",
                             installed=True,
-                            install_date=m.group(2)
+                            install_date=cur,
                         ))
                         
         return updates
@@ -319,13 +223,14 @@ class YayWrapper:
         return packages
 
     def get_popular_suggestions(
-        self, progress_callback=None
-    ) -> dict[str, list["Package"]]:
+        self,
+        progress_callback: Callable[[str], None] | None = None,
+    ) -> dict[str, list[Package]]:
         """
         Obtiene sugerencias populares de la Arch Wiki agrupadas por categoría,
         filtrando las que ya están instaladas.
         """
-        wiki_apps_by_category = self._scrape_arch_wiki_applications()
+        wiki_apps_by_category = fetch_wiki_applications_by_category()
         installed = self.get_installed_packages()
         installed_names = {p.name.lower() for p in installed}
 
@@ -376,10 +281,10 @@ class YayWrapper:
             return True
         except subprocess.CalledProcessError as e:
             msg = e.stderr if e.stderr else e.stdout
-            print(f"Error al desbloquear: {msg}")
+            logger.error("Error al desbloquear: %s", msg)
             return False
-        except Exception as e:
-            print(f"Error inesperado al desbloquear: {e}")
+        except Exception:
+            logger.exception("Error inesperado al desbloquear")
             return False
 
     def refresh_databases(self) -> subprocess.Popen:

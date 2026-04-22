@@ -1,12 +1,14 @@
 import os
 import sys
-from PyQt6.QtWidgets import QApplication
-from PyQt6.QtGui import QIcon
-from PyQt6.QtGui import QPalette, QColor
-from PyQt6.QtCore import Qt
+
+from PyQt6.QtCore import QDir, QLockFile, Qt
+from PyQt6.QtGui import QIcon, QPalette, QColor
+from PyQt6.QtWidgets import QMessageBox, QApplication
+
+from core.config_manager import ConfigManager
+from core.logging_setup import configure_logging
 from gui.main_window import MainWindow
 from i18n.translator import Translator
-from core.config_manager import ConfigManager
 
 
 def load_app_icon() -> QIcon:
@@ -29,10 +31,11 @@ def load_app_icon() -> QIcon:
 
     return icon
 
-def apply_theme(app, theme_name):
+
+def apply_theme(app: QApplication, theme_name: str) -> None:
     if theme_name == "system":
         return
-        
+
     app.setStyle("Fusion")
     if theme_name == "dark":
         palette = QPalette()
@@ -67,18 +70,31 @@ def apply_theme(app, theme_name):
         palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.white)
         app.setPalette(palette)
 
-def main():
+
+def main() -> None:
+    configure_logging()
+
     app = QApplication(sys.argv)
     app.setApplicationName("Wakka")
     app.setDesktopFileName("wakka")
 
-    # Cargar traducciones (Wakka + Qt Base)
     translator = Translator()
     translator.load(app)
 
+    lock_path = os.path.join(QDir.tempPath(), "wakka-instance.lock")
+    lock = QLockFile(lock_path)
+    if not lock.tryLock():
+        QMessageBox.warning(
+            None,
+            app.translate("main", "Wakka"),
+            app.translate("main", "Ya hay otra instancia de Wakka en ejecución."),
+        )
+        sys.exit(1)
+
+    setattr(app, "_wakka_instance_lock", lock)
+
     icon = load_app_icon()
 
-    # Aplicar Tema
     config = ConfigManager()
     apply_theme(app, config.get("theme", "system"))
 
@@ -86,13 +102,12 @@ def main():
 
     window = MainWindow()
     window.setWindowIcon(icon)
-    
-    # Si se inicia con --tray, no mostramos la ventana principal
+
     if "--tray" not in sys.argv:
         window.show()
 
     sys.exit(app.exec())
 
+
 if __name__ == "__main__":
     main()
-    
