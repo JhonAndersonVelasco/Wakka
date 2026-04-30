@@ -78,13 +78,13 @@ class InstalledTab(QWidget):
         self.search_input.textChanged.connect(self._on_search_text_changed)
         header.addWidget(self.search_input)
 
-        refresh_btn = QPushButton("Refrescar")
+        refresh_btn = QPushButton(self.tr("Refrescar"))
         refresh_btn.setIcon(QIcon.fromTheme("view-refresh"))
         refresh_btn.setFixedHeight(35)
         refresh_btn.clicked.connect(self.refresh_view)
         header.addWidget(refresh_btn)
 
-        self.remove_selected_btn = QPushButton("🗑️ Desinstalar seleccionados")
+        self.remove_selected_btn = QPushButton(self.tr("🗑️ Desinstalar seleccionados"))
         self.remove_selected_btn.setFixedHeight(35)
         self.remove_selected_btn.setEnabled(False)
         self.remove_selected_btn.clicked.connect(self.on_remove_selected)
@@ -200,6 +200,7 @@ class InstalledTab(QWidget):
 
             info_btn = QPushButton("ℹ️")
             info_btn.setFixedWidth(30)
+            info_btn.setToolTip(self.tr("Consultar a google"))
             info_btn.clicked.connect(lambda checked, p=pkg: self.show_info.emit(p.name, p.description))
             actions_layout.addWidget(info_btn)
 

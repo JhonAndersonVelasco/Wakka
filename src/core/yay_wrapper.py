@@ -6,6 +6,7 @@ import random
 import re
 import shutil
 import subprocess
+import time
 from dataclasses import dataclass
 from typing import Callable, Dict, List
 
@@ -50,10 +51,10 @@ class YayWrapper:
         
         # 1. Repositorios oficiales (usamos checkupdates si está disponible para info fresca sin root)
         if shutil.which("checkupdates"):
-            res_repo = self._run(["checkupdates", "--nocolor"])
+            res_repo = self._run(["checkupdates"])
         else:
             # Fallback a pacman -Qu (solo verá lo que ya esté sincronizado)
-            res_repo = self._run([self.pacman_path, "-Qu", "--color", "never"])
+            res_repo = self._run([self.pacman_path, "-Qu"])
             
         if res_repo and res_repo.stdout:
             for line in res_repo.stdout.strip().splitlines():
@@ -147,13 +148,16 @@ class YayWrapper:
 
         # Buscar el directorio del paquete (puede tener versión en el nombre)
         if not os.path.isdir(pacman_db):
-            candidates = [
-                d for d in os.listdir("/var/lib/pacman/local")
-                if d == name or d.startswith(f"{name}-")
-            ]
-            if not candidates:
+            try:
+                candidates = [
+                    d for d in os.listdir("/var/lib/pacman/local")
+                    if d == name or d.startswith(f"{name}-")
+                ]
+                if not candidates:
+                    return ""
+                pacman_db = f"/var/lib/pacman/local/{candidates[0]}"
+            except OSError:
                 return ""
-            pacman_db = f"/var/lib/pacman/local/{candidates[0]}"
 
         files_list = os.path.join(pacman_db, "files")
         if not os.path.exists(files_list):
@@ -191,7 +195,7 @@ class YayWrapper:
         return dt.strftime("%d %b %Y")
 
     def get_installed_packages(self) -> List[Package]:
-        """Obtiene todos los paquetes instalados"""
+        """Obtiene todos los paquetes instalados (Pacman + Externos)"""
         result = self._run([self.pacman_path, "-Qi"])
         packages = []
 
@@ -220,7 +224,43 @@ class YayWrapper:
                         size=pkg_info.get('Installed Size', pkg_info.get('Tamaño de la instalación', '')),
                         last_used=self.get_package_last_used(name)
                     ))
+        
+        # Añadir paquetes externos (AppImages)
+        packages.extend(self.get_external_packages())
         return packages
+
+    def get_external_packages(self) -> List[Package]:
+        """Busca paquetes instalados manualmente (AppImages) registrados por Wakka"""
+        external = []
+        apps_dir = "/usr/share/applications"
+        if not os.path.exists(apps_dir):
+            return []
+            
+        for f in os.listdir(apps_dir):
+            if f.endswith(".desktop"):
+                path = os.path.join(apps_dir, f)
+                try:
+                    with open(path, "r", errors="ignore") as fd:
+                        content = fd.read()
+                        if "X-Wakka-Installed=true" in content:
+                            name = ""
+                            desc = "AppImage (Manual)"
+                            for line in content.splitlines():
+                                if line.startswith("Name="): name = line.split("=", 1)[1]
+                                elif line.startswith("Comment="): desc = line.split("=", 1)[1]
+                            
+                            if name:
+                                external.append(Package(
+                                    name=f"{name} (AppImage)",
+                                    version="Local",
+                                    description=desc,
+                                    repo="appimage",
+                                    installed=True,
+                                    install_date=time.strftime("%d %b %Y", time.localtime(os.path.getmtime(path)))
+                                ))
+                except Exception:
+                    continue
+        return external
 
     def get_popular_suggestions(
         self,

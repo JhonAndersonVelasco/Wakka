@@ -1,0 +1,60 @@
+#!/bin/bash
+# Wakka Background Helper
+# Operaciones en segundo plano que NO requieren contraseña (polkit: allow_active yes).
+# Este script es un binario independiente (NO un symlink a wakka-helper) para que
+# polkit aplique la política com.wakka.package-background y no pida contraseña.
+
+ACTION="$1"
+
+run_yay_as_user() {
+    local REAL_UID="$1"
+    local REAL_USER
+    REAL_USER=$(id -nu "$REAL_UID")
+    local REAL_HOME
+    REAL_HOME=$(getent passwd "$REAL_UID" | cut -d: -f6)
+    shift
+
+    local SUDOERS_FILE="/etc/sudoers.d/wakka-temp-$REAL_USER"
+
+    # Regla temporal para que yay pueda llamar a pacman sin contraseña
+    echo "$REAL_USER ALL=(ROOT) NOPASSWD: /usr/bin/pacman" > "$SUDOERS_FILE"
+    chmod 440 "$SUDOERS_FILE"
+    trap "rm -f $SUDOERS_FILE" EXIT INT TERM
+
+    sudo -u "$REAL_USER" /usr/bin/yay "$@" --builddir "$REAL_HOME/.cache/yay"
+
+    rm -f "$SUDOERS_FILE"
+    trap - EXIT INT TERM
+}
+
+case "$ACTION" in
+    download)
+        # Descarga actualizaciones sin instalarlas.
+        # Usamos -uw (sin -Sy) porque las DBs ya fueron sincronizadas por checkupdates
+        # o yay -Qua durante la comprobación previa. Añadir -Sy aquí requeriría root
+        # y dispararía el diálogo de contraseña innecesariamente.
+        REAL_UID=$PKEXEC_UID
+        if [ -n "$REAL_UID" ]; then
+            if [ $# -le 1 ]; then
+                run_yay_as_user "$REAL_UID" -uw --noconfirm
+            else
+                run_yay_as_user "$REAL_UID" -w --noconfirm "${@:2}"
+            fi
+        else
+            if [ $# -le 1 ]; then
+                /usr/bin/yay -uw --noconfirm
+            else
+                /usr/bin/yay -w --noconfirm "${@:2}"
+            fi
+        fi
+        ;;
+    refresh)
+        # Sincroniza las bases de datos de pacman (sí requiere root, pero se llama
+        # explícitamente desde la UI cuando el usuario lo solicita).
+        /usr/bin/pacman -Sy
+        ;;
+    *)
+        echo "Acción no válida para wakka-background-helper: $ACTION"
+        exit 1
+        ;;
+esac

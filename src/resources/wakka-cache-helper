@@ -35,6 +35,22 @@ case "$ACTION" in
         fi
         exec /usr/bin/pacman -Rns --noconfirm $ORPHANS
         ;;
+    clean-all)
+        KEEP="${1:-2}"
+        PACCACHE_BIN="$(find_paccache)"
+        if [ -n "$PACCACHE_BIN" ]; then
+            echo "Limpiando versiones antiguas de caché..."
+            "$PACCACHE_BIN" -r "-k${KEEP}"
+            echo "Limpiando caché de paquetes desinstalados..."
+            "$PACCACHE_BIN" -ruk0
+        fi
+        ORPHANS="$(/usr/bin/pacman -Qdtq)"
+        if [ -n "$ORPHANS" ]; then
+            echo "Eliminando paquetes huérfanos..."
+            /usr/bin/pacman -Rns --noconfirm $ORPHANS
+        fi
+        echo "Limpieza del sistema completada."
+        ;;
     *)
         echo "Acción no válida: $ACTION"
         exit 1

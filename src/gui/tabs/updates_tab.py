@@ -168,7 +168,7 @@ class UpdatesTab(QWidget):
 
             info_btn = QPushButton("ℹ️")
             info_btn.setFixedWidth(28)
-            info_btn.setToolTip(self.tr("Preguntar a google"))
+            info_btn.setToolTip(self.tr("Consultar a google"))
             info_btn.clicked.connect(lambda checked, p=pkg: self.show_info.emit(p.name, p.description))
             actions_layout.addWidget(info_btn)
 

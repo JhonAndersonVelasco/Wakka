@@ -10,6 +10,7 @@ from gui.widgets import PackageTable
 from pathlib import Path
 import subprocess
 import shutil
+from core.config_manager import ConfigManager
 
 # --- Workers ---
 
@@ -61,6 +62,7 @@ class PackageCard(QFrame):
                 border: 2px solid #2196F3;
             }
         """)
+        self.setToolTip(self.package.description)
         self.setup_ui()
 
     def setup_ui(self):
@@ -88,7 +90,7 @@ class PackageCard(QFrame):
         btn_layout = QVBoxLayout()
 
         info_btn = QPushButton(self.tr("ℹ️ Info"))
-        info_btn.setToolTip(self.tr("Abrir la wiki de Arch y archlinux.org (solo nombre del paquete)"))
+        info_btn.setToolTip(self.tr("Consultar a google"))
         info_btn.clicked.connect(lambda: self.info_clicked.emit(
             self.package.name,
             self.package.description
@@ -155,12 +157,12 @@ class ExploreTab(QWidget):
         search_btn.clicked.connect(self.do_search)
         header_layout.addWidget(search_btn)
 
-        local_btn = QPushButton(self.tr("📂 Instalar local"))
+        local_btn = QPushButton(self.tr("📂 Instalar paquete local"))
         local_btn.setFixedHeight(35)
         local_btn.clicked.connect(self.install_local_package)
         header_layout.addWidget(local_btn)
 
-        self.install_selected_btn = QPushButton("⬇️ Instalar seleccionados")
+        self.install_selected_btn = QPushButton(self.tr("⬇️ Instalar seleccionados"))
         self.install_selected_btn.setFixedHeight(35)
         self.install_selected_btn.clicked.connect(self.on_install_selected)
         self.install_selected_btn.setEnabled(False)
@@ -355,6 +357,7 @@ class ExploreTab(QWidget):
             
             info_btn = QPushButton("ℹ️")
             info_btn.setFixedWidth(30)
+            info_btn.setToolTip(self.tr("consultar a google"))
             info_btn.clicked.connect(lambda ch, p=pkg: self.show_info.emit(p.name, p.description))
             al.addWidget(info_btn)
 
@@ -395,11 +398,27 @@ class ExploreTab(QWidget):
             self.install_selected.emit(selected)
 
     def install_local_package(self):
+        config = ConfigManager()
+        last_path = config.get("last_local_path", str(Path.home()))
+        
+        # Filtro combinado como predeterminado
+        all_supported = self.tr("Paquetes compatibles (*.pkg.tar.zst *.pkg.tar.xz *.deb *.rpm *.AppImage)")
+        arch_filter = self.tr("Arch Linux (*.pkg.tar.zst *.pkg.tar.xz)")
+        deb_filter = self.tr("Debian (*.deb)")
+        rpm_filter = self.tr("RPM (*.rpm)")
+        appimage_filter = self.tr("AppImage (*.AppImage)")
+        all_files = self.tr("Todos los archivos (*)")
+        
+        filters = f"{all_supported};;{arch_filter};;{deb_filter};;{rpm_filter};;{appimage_filter};;{all_files}"
+        
         file_path, _ = QFileDialog.getOpenFileName(
-            self, self.tr("Seleccionar paquete"), "",
-            self.tr("Arch Linux (*.pkg.tar.zst);;Debian (*.deb);;RPM (*.rpm);;Todos los archivos (*)")
+            self, self.tr("Seleccionar paquete"), last_path, filters
         )
-        if file_path: self.install_local.emit(file_path)
+        
+        if file_path:
+            # Guardar la carpeta para la próxima vez
+            config.set("last_local_path", str(Path(file_path).parent))
+            self.install_local.emit(file_path)
 
     def clear_layout(self, layout):
         if layout is not None:

@@ -8,13 +8,16 @@ pkgdesc="Modern graphical package manager for Arch Linux with AI integration"
 arch=('any')
 url="https://github.com/jhon/wakka"
 license=('GPL')
-depends=('python-pyqt6' 
-         'python-requests' 
+depends=('appimage-thumbnailer'
+         'binutils'
          'python-beautifulsoup4' 
          'python-lxml' 
+         'python-pyqt6' 
+         'python-requests' 
          'yay' 
          'polkit' 
-         'pacman-contrib')
+         'pacman-contrib'
+         'squashfs-tools')
 makedepends=()
 source=("wakka"
         "wakka.desktop")
@@ -30,6 +33,7 @@ package() {
   # 2. Scripts ejecutables
   install -Dm755 "${srcdir}/wakka" "${pkgdir}/usr/bin/wakka"
   install -Dm755 "${srcdir}/resources/wakka-helper" "${pkgdir}/usr/bin/wakka-helper"
+  install -Dm755 "${srcdir}/resources/wakka-background-helper" "${pkgdir}/usr/bin/wakka-background-helper"
   install -Dm755 "${srcdir}/resources/wakka-cache-helper" "${pkgdir}/usr/bin/wakka-cache-helper"
   install -Dm755 "${srcdir}/resources/wakka-service-helper" "${pkgdir}/usr/bin/wakka-service-helper"
   install -Dm755 "${srcdir}/resources/wakka-shutdown-helper" "${pkgdir}/usr/bin/wakka-shutdown-helper"
@@ -42,6 +46,8 @@ package() {
   # 4. Políticas de Polkit
   install -Dm644 "${srcdir}/resources/com.wakka.package-manager.policy" \
     "${pkgdir}/usr/share/polkit-1/actions/com.wakka.package-manager.policy"
+  install -Dm644 "${srcdir}/resources/com.wakka.package-background.policy" \
+    "${pkgdir}/usr/share/polkit-1/actions/com.wakka.package-background.policy"
   install -Dm644 "${srcdir}/resources/com.wakka.package-cleaner.policy" \
     "${pkgdir}/usr/share/polkit-1/actions/com.wakka.package-cleaner.policy"
   install -Dm644 "${srcdir}/resources/com.wakka.service-manager.policy" \

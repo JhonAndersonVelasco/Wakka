@@ -38,6 +38,7 @@ class CacheTab(QWidget):
     clean_pacman_uninstalled   = pyqtSignal()
     clean_yay_requested        = pyqtSignal()
     clean_orphans_requested    = pyqtSignal()
+    clean_all_requested        = pyqtSignal(int)
     refresh_requested          = pyqtSignal()
     status_msg                 = pyqtSignal(str)
 
@@ -99,6 +100,16 @@ class CacheTab(QWidget):
         refresh_btn.setToolTip(self.tr("Actualizar tamaños de almacenamiento"))
         refresh_btn.clicked.connect(self.refresh_requested.emit)
         total_row.addWidget(refresh_btn)
+
+        clean_all_btn = QPushButton(self.tr("🧹 Limpiar todo"))
+        clean_all_btn.setToolTip(self.tr("Ejecutar todas las tareas de limpieza (pacman, AUR y huérfanos)"))
+        clean_all_btn.setStyleSheet("background-color: #2196F3; color: white; font-weight: bold; padding: 5px 12px;")
+        clean_all_btn.clicked.connect(
+            lambda: self.clean_all_requested.emit(self._keep_spin.value())
+        )
+        total_row.addSpacing(4)
+        total_row.addWidget(clean_all_btn)
+
         ov_layout.addLayout(total_row)
 
         separator = QFrame()
@@ -111,9 +122,11 @@ class CacheTab(QWidget):
 
         self._pacman_lbl = self._make_size_item("📦", "pacman", "—")
         self._yay_lbl    = self._make_size_item("🔨", self.tr("AUR (yay)"), "—")
+        self._orphans_lbl = self._make_size_item("🗑️", self.tr("Huérfanos"), "—")
 
         breakdown.addLayout(self._pacman_lbl["layout"])
         breakdown.addLayout(self._yay_lbl["layout"])
+        breakdown.addLayout(self._orphans_lbl["layout"])
         breakdown.addStretch()
         ov_layout.addLayout(breakdown)
 
@@ -257,6 +270,7 @@ class CacheTab(QWidget):
         self._total_label.setText(info.total_size_str)
         self._pacman_lbl["size_lbl"].setText(info.pacman_size_str)
         self._yay_lbl["size_lbl"].setText(info.yay_size_str)
+        self._orphans_lbl["size_lbl"].setText(str(info.orphan_count))
         self.status_msg.emit(self.tr("Cálculo de caché completado"))
 
     def refresh_view(self):

@@ -53,7 +53,9 @@ class Translator:
 
     def load(self, app):
         # Directorio de traducciones será local a src/i18n
-        translations_dir = os.path.dirname(__file__)
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        translations_dir = os.path.join(root, "i18n")
+
 
         # 1. Cargar Traducción de Wakka (ej. wakka_es.qm o es.qm)
         # Intentar varias combinaciones: wakka_en_US, en_US, wakka_en, en

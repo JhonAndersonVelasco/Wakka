@@ -4,8 +4,6 @@
 
 ACTION="$1"
 
-ACTION="$1"
-
 run_yay_with_elevation() {
     local REAL_UID="$1"
     local REAL_USER
@@ -22,9 +20,9 @@ run_yay_with_elevation() {
     
     # Limpieza al salir
     trap "rm -f $SUDOERS_FILE" EXIT INT TERM
-
+    
     # Ejecutar yay como usuario real
-    sudo -u "$REAL_USER" /usr/bin/yay "$@" --builddir "$REAL_HOME/.cache/yay"
+    sudo -u "$REAL_USER" /usr/bin/yay --answerdiff None --answerclean None --answerupgrade None "$@" --builddir "$REAL_HOME/.cache/yay"
 
     rm -f "$SUDOERS_FILE"
     trap - EXIT INT TERM
@@ -33,26 +31,40 @@ run_yay_with_elevation() {
 case "$ACTION" in
     pk-sudo)
         shift
-        # Puente privilegiado (mantenido por compatibilidad si algo lo usa)
         "$@"
         ;;
     install)
         REAL_UID=$PKEXEC_UID
         if [ -n "$REAL_UID" ]; then
-            run_yay_with_elevation "$REAL_UID" -S --noconfirm --needed "${@:2}"
+            run_yay_with_elevation "$REAL_UID" -Sy --noconfirm --needed "${@:2}"
         else
             shift
-            /usr/bin/yay -S --noconfirm --needed "$@"
+            /usr/bin/yay --answerdiff None --answerclean None --answerupgrade None -Sy --noconfirm --needed "$@"
         fi
         ;;
     remove)
-        REAL_UID=$PKEXEC_UID
-        if [ -n "$REAL_UID" ]; then
-            run_yay_with_elevation "$REAL_UID" -Rns --noconfirm "${@:2}"
-        else
-            shift
-            /usr/bin/yay -Rns --noconfirm "$@"
-        fi
+        shift
+        for PKG in "$@"; do
+            if [[ "$PKG" == *" (AppImage)" ]]; then
+                CLEAN_NAME=$(echo "$PKG" | sed "s/ (AppImage)//" | tr "[:upper:]" "[:lower:]")
+                DESKTOP="/usr/share/applications/${CLEAN_NAME}.desktop"
+                if [ -f "$DESKTOP" ]; then
+                    OPT_DIR=$(grep "Exec=" "$DESKTOP" | cut -d= -f2 | sed "s/\"//g" | xargs dirname)
+                    rm -rf "$OPT_DIR"
+                    rm -f "$DESKTOP"
+                    echo "AppImage $PKG eliminada correctamente."
+                else
+                    echo "No se encontró el archivo .desktop para $PKG"
+                fi
+            else
+                REAL_UID=$PKEXEC_UID
+                if [ -n "$REAL_UID" ]; then
+                    run_yay_with_elevation "$REAL_UID" -Rns --noconfirm "$PKG"
+                else
+                    /usr/bin/yay --answerdiff None --answerclean None --answerupgrade None -Rns --noconfirm "$PKG"
+                fi
+            fi
+        done
         ;;
     update)
         REAL_UID=$PKEXEC_UID
@@ -60,19 +72,46 @@ case "$ACTION" in
             run_yay_with_elevation "$REAL_UID" -Syu --noconfirm "${@:2}"
         else
             shift
-            /usr/bin/yay -Syu --noconfirm "$@"
+            /usr/bin/yay --answerdiff None --answerclean None --answerupgrade None -Syu --noconfirm "$@"
         fi
         ;;
     install-local)
-        shift
-        /usr/bin/yay -U --noconfirm "$@"
+        FILE_PATH="$2"
+        if [[ "$FILE_PATH" == *.deb ]] || [[ "$FILE_PATH" == *.rpm ]]; then
+            echo "--- Converting foreign package ---"
+            # Llamar al conversor (ajusta la ruta según instalación)
+            RESULT=$(python3 /home/jhon/Desarrollos/Wakka/src/core/package_converter.py convert "$FILE_PATH" | grep "RESULT:" | cut -d: -f2)
+            if [ -n "$RESULT" ] && [ -f "$RESULT" ]; then
+                /usr/bin/pacman -U --noconfirm "$RESULT"
+                rm -f "$RESULT"
+            else
+                echo "Error en la conversión"
+                exit 1
+            fi
+        elif [[ "$FILE_PATH" == *.AppImage ]]; then
+            echo "--- Installing AppImage ---"
+            python3 /home/jhon/Desarrollos/Wakka/src/core/package_converter.py appimage "$FILE_PATH"
+        else
+            REAL_UID=$PKEXEC_UID
+            if [ -n "$REAL_UID" ]; then
+                run_yay_with_elevation "$REAL_UID" -U --noconfirm "${@:2}"
+            else
+                shift
+                /usr/bin/yay --answerdiff None --answerclean None --answerupgrade None -U --noconfirm "$@"
+            fi
+        fi
         ;;
     clean)
-        shift
-        /usr/bin/yay -Yc --noconfirm "$@"
+        REAL_UID=$PKEXEC_UID
+        if [ -n "$REAL_UID" ]; then
+            run_yay_with_elevation "$REAL_UID" -Yc --noconfirm "${@:2}"
+        else
+            shift
+            /usr/bin/yay --answerdiff None --answerclean None --answerupgrade None -Yc --noconfirm "$@"
+        fi
         ;;
     refresh)
-        /usr/bin/yay -Sy --noconfirm
+        /usr/bin/pacman -Sy --noconfirm
         ;;
     download)
         REAL_UID=$PKEXEC_UID
@@ -86,9 +125,9 @@ case "$ACTION" in
         else
             shift
             if [ $# -eq 0 ]; then
-                /usr/bin/yay -Syuw --noconfirm
+                /usr/bin/yay --answerdiff None --answerclean None --answerupgrade None -Syuw --noconfirm
             else
-                /usr/bin/yay -Sw --noconfirm "$@"
+                /usr/bin/yay --answerdiff None --answerclean None --answerupgrade None -Sw --noconfirm "$@"
             fi
         fi
         ;;

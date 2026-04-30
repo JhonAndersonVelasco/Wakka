@@ -167,21 +167,32 @@ class TerminalDialog(QDialog):
                 self._advance_progress(start)
                 break
 
+    # Patrones que indican un error real que debe bloquear el cierre automático.
+    # Son lo suficientemente específicos para no capturar mensajes informativos
+    # de herramientas como gdb-add-index, makepkg o yay que usan "error" en
+    # contextos no fatales (p.ej. "No debugging symbols", "Error while writing index").
+    _REAL_ERROR_PATTERNS = [
+        re.compile(r"^error:", re.I),                        # pacman/yay: "error: ..."
+        re.compile(r"^==> error:", re.I),                    # makepkg: "==> ERROR: ..."
+        re.compile(r"failed to (install|commit|download|synchronize)", re.I),
+        re.compile(r"transaction failed|could not satisfy|conflicting files", re.I),
+        re.compile(r"^fatal:", re.I),                        # git u otros
+    ]
+
+    def _is_real_error(self, text: str) -> bool:
+        return any(p.search(text) for p in self._REAL_ERROR_PATTERNS)
+
     def append_output(self, text):
         self._parse_progress(text)
 
-        err_c = self._term_err
-        warn_c = self._term_warn
-        ok_c = self._term_fg
-
         lower = text.lower()
-        if "error" in lower or "failed" in lower or "err:" in lower:
-            self.terminal.setTextColor(err_c)
+        if self._is_real_error(text):
+            self.terminal.setTextColor(self._term_err)
             self.auto_close_allowed = False
         elif "warning" in lower or "advertencia" in lower:
-            self.terminal.setTextColor(warn_c)
+            self.terminal.setTextColor(self._term_warn)
         else:
-            self.terminal.setTextColor(ok_c)
+            self.terminal.setTextColor(self._term_fg)
 
         self.terminal.insertPlainText(text + "\n")
         self.terminal.moveCursor(QTextCursor.MoveOperation.End)
@@ -195,7 +206,13 @@ class TerminalDialog(QDialog):
         if self.operation_succeeded and self.auto_close_allowed:
             self.terminal.setTextColor(self._term_fg)
             self.append_output(self.tr("\n✅ Completado."))
-            QTimer.singleShot(1500, self.accept)
+            QTimer.singleShot(5000, self.accept)
+        elif self.operation_succeeded:
+            # Terminó bien pero hubo líneas de error no fatales (ej. gdb-add-index)
+            self.terminal.setTextColor(self._term_fg)
+            self.append_output(self.tr("\n✅ Completado con advertencias."))
+            #self.close_btn.setFocus()
+            QTimer.singleShot(30000, self.accept)
         else:
             self.progress.setStyleSheet("QProgressBar::chunk { background-color: #f44336; }")
             self.terminal.setTextColor(self._term_warn)

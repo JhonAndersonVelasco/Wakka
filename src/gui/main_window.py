@@ -72,6 +72,7 @@ class MainWindow(QMainWindow):
         self.cache_tab.clean_pacman_uninstalled.connect(self.run_clean_pacman_uninstalled)
         self.cache_tab.clean_yay_requested.connect(self.run_clean_yay)
         self.cache_tab.clean_orphans_requested.connect(self.run_clean_orphans)
+        self.cache_tab.clean_all_requested.connect(self.run_clean_all)
         self.cache_tab.refresh_requested.connect(self.refresh_cache_info)
         self.cache_tab.status_msg.connect(self.set_status_message)
         self.cache_mgr.cache_info_ready.connect(self.cache_tab.update_cache_info)
@@ -189,7 +190,15 @@ class MainWindow(QMainWindow):
         )
 
     def show_package_info(self, name, description):
-        self.package_info.explain_package(name, description)
+        import urllib.parse
+        from PyQt6.QtGui import QDesktopServices
+        from PyQt6.QtCore import QUrl
+        
+        # Hacemos la consulta traducible
+        query_template = self.tr("El paquete {0} para archlinux qué es, para qué sirve y en qué circunstancias es recomendable instalarlo")
+        query = query_template.format(name)
+        url = f"https://www.google.com/search?q={urllib.parse.quote(query)}"
+        QDesktopServices.openUrl(QUrl(url))
 
     def run_clean_pacman(self, keep):
         process = self.cache_mgr.clean_pacman_cache(keep)
@@ -220,6 +229,15 @@ class MainWindow(QMainWindow):
         process = self.cache_mgr.clean_orphans()
         self._run_terminal_operation(
             self.tr("Eliminando paquetes huérfanos"),
+            process,
+            self.cache_tab.refresh_view,
+        )
+
+    def run_clean_all(self, keep):
+        if not self._ensure_not_locked(): return
+        process = self.cache_mgr.clean_all(keep)
+        self._run_terminal_operation(
+            self.tr("Limpieza completa del sistema"),
             process,
             self.cache_tab.refresh_view,
         )

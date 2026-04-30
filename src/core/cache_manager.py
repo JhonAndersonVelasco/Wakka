@@ -34,6 +34,15 @@ class CacheInfo:
     def __init__(self):
         self.pacman_size: int = _dir_size(PACMAN_CACHE)
         self.yay_size: int = _dir_size(YAY_CACHE)
+        self.orphan_count: int = self._get_orphan_count()
+
+    def _get_orphan_count(self) -> int:
+        try:
+            # pacman -Qdtq lists orphan packages
+            result = subprocess.check_output(["pacman", "-Qdtq"], text=True, stderr=subprocess.DEVNULL)
+            return len(result.strip().split("\n")) if result.strip() else 0
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return 0
 
     @property
     def total_size(self) -> int:
@@ -119,5 +128,20 @@ class CacheManager(QObject):
     def clean_orphans(self) -> subprocess.Popen:
         return subprocess.Popen(
             ["pkexec", self._cache_helper, "clean-orphans"],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        )
+
+    def clean_all(self, keep: int = 2) -> subprocess.Popen:
+        """Limpia todo: pacman (versiones y desinstalados), AUR y huérfanos"""
+        # Primero limpiamos AUR en espacio de usuario
+        try:
+            if YAY_CACHE.exists():
+                shutil.rmtree(YAY_CACHE, ignore_errors=True)
+        except Exception:
+            pass
+        
+        # Luego ejecutamos las limpiezas de root
+        return subprocess.Popen(
+            ["pkexec", self._cache_helper, "clean-all", str(keep)],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
         )

@@ -7,8 +7,8 @@ from PyQt6.QtWidgets import QMessageBox, QApplication
 
 from core.config_manager import ConfigManager
 from core.logging_setup import configure_logging
+from core.translator import Translator
 from gui.main_window import MainWindow
-from i18n.translator import Translator
 
 
 def load_app_icon() -> QIcon:

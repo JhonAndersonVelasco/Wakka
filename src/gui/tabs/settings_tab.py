@@ -425,13 +425,14 @@ class SettingsTab(QWidget):
         self._config.set("language", cur_lang)
 
         # 4. Forzar el reinicio
-        reply = QMessageBox.question(
-            self, self.tr("Cambio realizado"),
-            self.tr("Para aplicar el nuevo tema o idioma, es necesario reiniciar Wakka.\n\n"
-                    "¿Deseas reiniciar el programa ahora?"),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        if reply == QMessageBox.StandardButton.Yes:
+        msg = QMessageBox(self)
+        msg.setWindowTitle(self.tr("Cambio realizado"))
+        msg.setText(self.tr("Para aplicar el nuevo tema o idioma, es necesario reiniciar Wakka.\n\n¿Deseas reiniciar el programa ahora?"))
+        yes_btn = msg.addButton(self.tr("Sí"), QMessageBox.ButtonRole.YesRole)
+        no_btn = msg.addButton(self.tr("No"), QMessageBox.ButtonRole.NoRole)
+        msg.setIcon(QMessageBox.Icon.Question)
+        msg.exec()
+        if msg.clickedButton() == yes_btn:
             QProcess.startDetached(sys.executable, sys.argv)
             QApplication.quit()
         else:

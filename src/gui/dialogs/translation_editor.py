@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QMessageBox, QHeaderView, QFileDialog)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
-from i18n.translator import Translator
+from core.translator import Translator
 
 class TranslationEditorDialog(QDialog):
     def __init__(self, ts_path, parent=None):
@@ -135,8 +135,10 @@ class TranslationEditorDialog(QDialog):
 
     def update_row_color(self, row, text):
         color = self.COLOR_FILLED if text.strip() else self.COLOR_EMPTY
-        # Aplicamos color solo a la celda de traducción
-        self.table.item(row, 2).setBackground(color)
+        item = self.table.item(row, 2)
+        if item:
+            item.setBackground(color)
+            item.setForeground(QColor("black"))
 
     def filter_table(self):
         query = self.search_input.text().lower()
